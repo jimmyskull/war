@@ -53,7 +53,7 @@ class Database:
         for root, dirs, files in os.walk(self.db_path):
             for file in files:
                 id = os.path.basename(root) + file
-                yield self.load(id)
+                yield (id, self.load(id))
 
     def find(self, id):
         return os.path.exists(self._object_path(id))

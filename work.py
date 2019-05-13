@@ -5,6 +5,8 @@ import coloredlogs
 
 import war
 
+import config
+
 
 def main():
     # pylint: disable=C0103
@@ -26,18 +28,7 @@ def main():
     engine.set_data(X, y)
     engine.set_cv(3) # roc_auc by default
     engine.set_slots(-1)
-    engine.add([
-        war.strategies.gb.RandomSearchGradientBoosting(),
-        war.strategies.lda.LDA(),
-        war.strategies.lda.PCALDA(),
-        war.strategies.linear.RandomSearchLogisticRegressionL1(),
-        war.strategies.linear.RandomSearchLogisticRegressionL2(),
-        war.strategies.mlp.RandomSearchPCAMLP(),
-        war.strategies.nb.NaiveBayes(),
-        war.strategies.nb.PCANaiveBayes(),
-        war.strategies.rf.RandomSearchRandomForest(),
-        war.strategies.svm.RandomSearchPCASVMLinear(),
-    ])
+    engine.add(config.STRATEGIES)
     engine.start()
 
 

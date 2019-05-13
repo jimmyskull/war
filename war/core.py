@@ -34,7 +34,7 @@ class Strategy:
         cumulative_time = 0
         count = 0
         logger = logging.getLogger('war.strategy')
-        for result in self.database.iterate():
+        for _, result in self.database.iterate():
             if result['type'] != 'result':
                 continue
             count += 1
