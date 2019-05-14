@@ -73,6 +73,6 @@ class Database:
 
     def store(self, id, object):
         logger = logging.getLogger('war.database')
-        logger.debug('\033[38;5;240mStoring object %s in namespace %s\033[0m',
-                     id, self.namespace)
+        logger.debug('\033[38;5;240mStoring object %s/%s\033[0m',
+                     self.namespace, id)
         self._write_object(id, pickle.dumps(object))

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import datetime
 import hashlib
 import json
 import time
@@ -24,9 +25,11 @@ class Task(object):
         self.n_jobs = None
         self.total_jobs = None
         self.scoring = 'roc_auc'
+        self.estimator_njobs = None
 
     def __call__(self):
         start_time = time.time()
+        begin_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         agg = None
         scores = None
         error_info = None
@@ -60,7 +63,9 @@ class Task(object):
         elapsed_time = time.time() - start_time
         result = Result(
             task=self,
+            begin_time=begin_time,
             elapsed_time=elapsed_time,
+            total_time=elapsed_time * self.total_jobs,
             status=status,
             error_info=error_info,
             agg=agg,

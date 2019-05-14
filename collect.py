@@ -36,4 +36,3 @@ for strategy in tqdm(config.STRATEGIES):
 FNAME = 'results.xlsx'
 print('Writing {:,d} results to {!r}.'.format(len(rows), FNAME))
 concat(rows).to_excel(FNAME)
-

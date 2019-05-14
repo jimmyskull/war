@@ -1,5 +1,6 @@
 import logging
 import warnings
+
 from pandas import read_csv
 import coloredlogs
 
@@ -11,7 +12,7 @@ import config
 def main():
     # pylint: disable=C0103
     coloredlogs.install(
-        level=logging.INFO,
+        level=logging.DEBUG,
         #fmt='%(asctime)s %(levelname)s %(module)s %(message)s',
         fmt='%(asctime)s %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
