@@ -32,7 +32,7 @@ def optimize_task_config(available_slots, max_parallel_tasks,
 
     opt_res = minimize(
         _evaluate_task_config,
-        (max_parallel_tasks, max_validation_njobs, max_estimator_njobs),
+        (1, max_validation_njobs, max_estimator_njobs),
         method='SLSQP',
         bounds=(
             (1, max_parallel_tasks),
@@ -89,36 +89,37 @@ class Scheduler:
         assert self.slots_running >= 0
         for strat in self.strategies:
             if hash(strat) == result.task.strategy_id:
-                self.tasks_finished += 1
-                strat.collect(result)
-                self.strategies[strat]['running'] -= 1
-                self.strategies[strat]['cumulative_time'] += result.elapsed_time
-                self.strategies[strat]['finished'] += 1
-                if result.status == 'FAILED':
-                    logger.error(
-                        '%s task failed: %s', strat.name,
-                        result.error_info['message'])
-                    logger.error('Task id: %s/%s', strat.__class__.__name__,
-                                 result.task.id())
-                    return
-                score = result.agg['avg']
-                if self.strategies[strat]['best']['agg']['avg'] < score:
-                    logger.info(
-                        ('\033[1;32m%s\033[0m\033[32m'
-                         ' improvement: %.4f -> %.4f\033[0m'),
-                        strat.name,
-                        self.strategies[strat]['best']['agg']['avg'],
-                        score
-                    )
-                    self.strategies[strat]['best'] = {
-                        'agg': result.agg,
-                        'scores': result.scores,
-                    }
-                    self.improved_since_last_report = True
-                if self.tasks_finished % self.report_at_ntasks == 0:
-                    self.report_results()
-                assert self.strategies[strat]['running'] >= 0
+                continue
+            self.tasks_finished += 1
+            strat.collect(result)
+            self.strategies[strat]['running'] -= 1
+            self.strategies[strat]['cumulative_time'] += result.elapsed_time
+            self.strategies[strat]['finished'] += 1
+            if result.status == 'FAILED':
+                logger.error(
+                    '%s task failed: %s', strat.name,
+                    result.error_info['message'])
+                logger.error('Task id: %s/%s', strat.__class__.__name__,
+                             result.task.id())
                 return
+            score = result.agg['avg']
+            if self.strategies[strat]['best']['agg']['avg'] < score:
+                logger.info(
+                    ('\033[1;32m%s\033[0m\033[32m'
+                     ' improvement: %.4f -> %.4f\033[0m'),
+                    strat.name,
+                    self.strategies[strat]['best']['agg']['avg'],
+                    score
+                )
+                self.strategies[strat]['best'] = {
+                    'agg': result.agg,
+                    'scores': result.scores,
+                }
+                self.improved_since_last_report = True
+            if self.tasks_finished % self.report_at_ntasks == 0:
+                self.report_results()
+            assert self.strategies[strat]['running'] >= 0
+            return
         raise ValueError('Strategy not found not mark task as finished.')
 
     def report_results(self):
@@ -198,7 +199,6 @@ class Scheduler:
         # Estimate available slots (CPU cores to use).
         available_slots = self.available_slots()
         if not available_slots:
-            # logger.debug('Nothing to be done.')
             return []
         logger.debug('\033[90mWe have %d slots to use\033[0m', available_slots)
         # Get best scores plus eps (to avoid division by zero)
@@ -210,7 +210,7 @@ class Scheduler:
                  and not info['exhausted']
              else 0
              for strat, info in self.strategies.items()])
-        probs = scores / sum(scores)
+        probs = scores / (sum(scores) + 1e-4)
         logger.info('\033[35mProbabilites: [%s]\033[0m',
                     ', '.join([f'{prob:.0%}' for prob in probs]))
         # Sample from discrete probability function.
@@ -246,6 +246,7 @@ class Scheduler:
                 config['njobs_on_validation'] * \
                 config['njobs_on_estimator']
             self.slots_running += running
+            created = 0
             for tid in range(config['tasks']):
                 if (config['njobs_on_estimator'] == 0
                     or config['njobs_on_validation'] == 0):
@@ -258,6 +259,7 @@ class Scheduler:
                     task.total_jobs = config['njobs_on_estimator'] * \
                         config['njobs_on_validation']
                     task_list.append(task)
+                    created += 1
                     self.strategies[strat]['running'] += 1
                 except StopIteration:
                     self.strategies[strat]['exhausted'] = True
@@ -270,11 +272,11 @@ class Scheduler:
                         '\033[31mFailed to create a task for %s: %s\033[0m',
                         strat.name,
                         '{}: {}'.format(type(err).__name__, err))
-            logger.info(
-                ('\033[38;5;241mCreated tasks: %d × %s cv=%d fit=%d\033[0m'),
-                tid, #config['tasks'],
-                strat.name,
-                config['njobs_on_estimator'],
-                config['njobs_on_validation'],
-            )
+            if created:
+                logger.info(
+                    ('\033[38;5;241mNew %d × %s cv=%d fit=%d\033[0m'),
+                    created,
+                    strat.name,
+                    config['njobs_on_estimator'],
+                    config['njobs_on_validation'])
         return task_list
