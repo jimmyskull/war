@@ -69,7 +69,7 @@ class Task(object):
             status=status,
             error_info=error_info,
             agg=agg,
-            scoring=self._scoring_name,
+            scoring=self._scoring_name(),
             scores=scores,
             jobs=self.total_jobs
         )
