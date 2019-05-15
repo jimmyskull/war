@@ -126,8 +126,8 @@ class Engine:
                 if char == 'r':
                     sched.report_results()
                 elif char == 'd':
-                    logger.info('Changed log level to debug')
                     logging.getLogger().setLevel(logging.DEBUG)
+                    logger.info('Changed log level to debug')
                 elif char == 'i':
                     logging.getLogger().setLevel(logging.INFO)
                     logger.info('Changed log level to info')
