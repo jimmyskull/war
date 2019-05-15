@@ -271,9 +271,9 @@ class Scheduler:
                 max_parallel_tasks=max_tasks,
                 max_validation_njobs=max_per_val,
                 max_estimator_njobs=max_per_est)
-            running = config['tasks'] * \
-                config['njobs_on_validation'] * \
-                config['njobs_on_estimator']
+            allocated_slots_per_task = config['njobs_on_validation'] * \
+                                       config['njobs_on_estimator']
+            allocated_slots = config['tasks'] * allocated_slots_per_task
             created = 0
             for tid in range(config['tasks']):
                 if (config['njobs_on_estimator'] == 0
@@ -288,7 +288,7 @@ class Scheduler:
                         config['njobs_on_validation']
                     self.strategies[strat]['running'] += 1
                     created += 1
-                    self.slots_running += 1
+                    self.slots_running += allocated_slots_per_task
                     task_list.append(task)
                 except StopIteration:
                     self.strategies[strat]['exhausted'] = True
@@ -311,14 +311,23 @@ class Scheduler:
         return task_list
 
     def _probs(self):
-        scores = array(
-            [info['best']['agg']['avg'] \
-             + max(strat.sugar, 2 * (strat.warm_up - info['finished']))
-             if (strat.max_tasks == -1
-                 or strat.max_tasks > info['finished'])
-                 and not info['exhausted']
-             else 0
-             for strat, info in self.strategies.items()])
-        scores = scores
-        probs = scores / sum(scores)
+        weights = list()
+        min_score = min(max(0, info['best']['agg']['avg'] + strat.sugar)
+                        for strat, info in self.strategies.items())
+        max_score = max(max(1, info['best']['agg']['avg'] + strat.sugar)
+                        for strat, info in self.strategies.items())
+        for strat, info in self.strategies.items():
+            max_tasks = strat.max_tasks
+            exhausted, finished = info['exhausted'], info['finished']
+            if not (max_tasks == -1 or max_tasks > finished) or exhausted:
+                weights.append(0)
+                continue
+            best_avg_score = info['best']['agg']['avg']
+            best_score = min(1, max(0, best_avg_score))
+            norm_score = (best_score - min_score) / (max_score - min_score)
+            warm_up = 2 * (strat.warm_up - info['finished'])
+            weight = max(0, max(norm_score + strat.sugar, warm_up))
+            weights.append(weight)
+        weights = array(weights) + 1e-6
+        probs = weights / sum(weights)
         return probs
