@@ -14,8 +14,8 @@ class Strategy:
         self.max_parallel_tasks = max_parallel_tasks
         self.max_threads_per_estimator = max_threads_per_estimator
         self.max_tasks = max_tasks
-        self.sugar = 0.1   # Additional weight for probability scheduling.
-        self.warm_up = 10  # Ask to run at least warm_up tasks before
+        self.sugar = 0.01  # Additional weight for probability scheduling.
+        self.warm_up = 20  # Ask to run at least warm_up tasks before
                            # being susceptible to be dominated.
         # Use class name as userspace, to avoid spaces and special
         # characters in the path.
