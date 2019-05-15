@@ -213,6 +213,11 @@ class Scheduler:
         logger.info('-' * cols)
         logger.info(header)
         logger.info(col_sep)
+        def _fmt_score(x):
+            if x < 0:
+                return f'{x:.3f}'
+            return f'{x:.4f}'
+
         for idx, (strat, info) in enumerate(self.strategies.items(), 1):
             agg = info['best']['agg']
             to_ci = 2.0 / (numpy.sqrt(len(info['best']['scores'])) + 1e-4)
@@ -230,10 +235,10 @@ class Scheduler:
                 f"{info['running']:,d}".rjust(size_list[3]),
                 f"{info['slots']:,d}".rjust(size_list[4]),
                 f"{info['finished']:,d}".rjust(size_list[5]),
-                f"{agg['avg']:.4f}".rjust(size_list[6]),
-                f"{agg['std'] * to_ci:.4f}".rjust(size_list[7]),
-                f"{agg['min']:.4f}".rjust(size_list[8]),
-                f"{agg['max']:.4f}".rjust(size_list[9]),
+                _fmt_score(agg['avg']).rjust(size_list[6]),
+                _fmt_score(agg['std']*to_ci).rjust(size_list[7]),
+                _fmt_score(agg['min']).rjust(size_list[8]),
+                _fmt_score(agg['max']).rjust(size_list[9]),
                 f"{probs[idx - 1]:.0%}".rjust(size_list[10])
             )
         logger.info('-' * cols)
