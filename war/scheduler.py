@@ -83,6 +83,7 @@ class Scheduler:
                 'best': strat.cache['best'],
                 'finished': strat.cache['finished'],
                 'running': 0,
+                'slots': 0,
                 'exhausted': False
             }
 
@@ -96,6 +97,7 @@ class Scheduler:
             self.tasks_finished += 1
             strat.collect(result)
             self.strategies[strat]['running'] -= 1
+            self.strategies[strat]['slots'] -= result.jobs
             self.strategies[strat]['cumulative_time'] += result.elapsed_time
             self.strategies[strat]['finished'] += 1
             if result.status == 'FAILED':
@@ -170,6 +172,10 @@ class Scheduler:
         max_running = max([info['running']
                           for info in self.strategies.values()])
         running_len = len(str(max_running))
+        # Max slots.
+        max_slots = max([info['slots']
+                         for info in self.strategies.values()])
+        slots_len = len(str(max_slots))
         # Length for cumulative time
         cumtime_len = max(
             [len(('{} ({:5.1%})'.format(sec2time(info['cumulative_time'], 0),
@@ -188,7 +194,8 @@ class Scheduler:
             ('ID', 2),
             ('Name', name_len),
             ('Total Time', cumtime_len),
-            ('R', running_len),
+            ('T', running_len),
+            ('S', slots_len),
             ('Ended', 5),
             ('Best', 6),
             ('95% CI', 6),
@@ -210,7 +217,9 @@ class Scheduler:
             agg = info['best']['agg']
             to_ci = 2.0 / (numpy.sqrt(len(info['best']['scores'])) + 1e-4)
             logger.info(
-                '\033[%sm%s | %s | %s | %s | %s | %s | %s | %s | %s | %s\033[0m',
+                ('\033[%sm'
+                 '%s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s'
+                 '\033[0m'),
                 '1;34' if agg['avg'] == best else '0',
                 str(idx).rjust(size_list[0]),
                 strat.name.ljust(size_list[1]),
@@ -219,12 +228,13 @@ class Scheduler:
                     info['cumulative_time'] / total_time)
                  ).rjust(size_list[2]),
                 f"{info['running']:,d}".rjust(size_list[3]),
-                f"{info['finished']:,d}".rjust(size_list[4]),
-                f"{agg['avg']:.4f}".rjust(size_list[5]),
-                f"{agg['std'] * to_ci:.4f}".rjust(size_list[6]),
-                f"{agg['min']:.4f}".rjust(size_list[7]),
-                f"{agg['max']:.4f}".rjust(size_list[8]),
-                f"{probs[idx - 1]:.0%}".rjust(size_list[9])
+                f"{info['slots']:,d}".rjust(size_list[4]),
+                f"{info['finished']:,d}".rjust(size_list[5]),
+                f"{agg['avg']:.4f}".rjust(size_list[6]),
+                f"{agg['std'] * to_ci:.4f}".rjust(size_list[7]),
+                f"{agg['min']:.4f}".rjust(size_list[8]),
+                f"{agg['max']:.4f}".rjust(size_list[9]),
+                f"{probs[idx - 1]:.0%}".rjust(size_list[10])
             )
         logger.info('-' * cols)
 
@@ -286,6 +296,7 @@ class Scheduler:
                     task.n_jobs = config['njobs_on_validation']
                     task.total_jobs = allocated_slots_per_task
                     self.strategies[strat]['running'] += 1
+                    self.strategies[strat]['slots'] += allocated_slots_per_task
                     created += 1
                     self.slots_running += allocated_slots_per_task
                     task_list.append(task)
