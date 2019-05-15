@@ -295,11 +295,12 @@ class Scheduler:
     def _probs(self):
         scores = array(
             [info['best']['agg']['avg'] \
-             + max(strat.sugar, strat.warm_up - info['finished'])
+             + max(strat.sugar, 2 * (strat.warm_up - info['finished']))
              if (strat.max_tasks == -1
                  or strat.max_tasks > info['finished'])
                  and not info['exhausted']
              else 0
              for strat, info in self.strategies.items()])
+        scores = scores
         probs = scores / sum(scores)
         return probs

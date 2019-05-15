@@ -1,84 +1,70 @@
 import numpy
 
-from sklearn.base import BaseEstimator, ClassifierMixin
-
 from war.core import Strategy
 
 
-class LGBMModel(BaseEstimator, ClassifierMixin):
-
-    def __init__(self, model):
-        self.model = model
-
-    def fit(self, X, y=None):
-        self.model.fit(X, y)
-        return self
-
-    def predict_proba(self, X, y=None):
-        pred = self.model.predict(X).reshape(-1, 1)
-        return numpy.concatenate((1 - pred, pred), axis=1)
-
-
-class RandomSearchLGBM(Strategy):
+class RandomSearchXGB(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS LightGBM',
+        super().__init__(name='RS XGBoost',
                          max_parallel_tasks=-1,
                          max_threads_per_estimator=-1)
         self._cs = None
 
     def init(self, info):
+        bins = numpy.bincount(info['target'])
+        half_balanced = bins[0] / (bins[1] * 2)
+        balanced = bins[0] / bins[1]
         # pylint: disable=I1101
         import ConfigSpace as CS
         import ConfigSpace.hyperparameters as CSH
         P = info['features'].shape[1]
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters([
-            CSH.CategoricalHyperparameter(
-                'boosting_type', choices=['gbdt', 'dart', 'goss']),
             CSH.UniformIntegerHyperparameter(
-                'num_leaves', lower=2, upper=63, default_value=31),
+                'max_depth', lower=1, upper=20, default_value=3),
             CSH.UniformFloatHyperparameter(
                 'learning_rate', lower=0.0001, upper=1, log=True,
                 default_value=0.1),
             CSH.UniformIntegerHyperparameter(
                 'n_estimators', lower=10, upper=1000, default_value=100),
             CSH.CategoricalHyperparameter(
-                'class_weight', choices=['None', 'balanced']),
-            CSH.CategoricalHyperparameter(
-                'min_split_gain', choices=[0, 0.001, 0.01], default_value=0),
-            CSH.CategoricalHyperparameter(
-                'min_child_weight', choices=[1e-3, 1e-2, 1e-1],
-                default_value=1e-3),
-            CSH.CategoricalHyperparameter(
-                'min_child_samples',
-                choices=[10, 20, 30, 40, 50, 60, 70, 80, 90,
-                         100, 110, 120, 130, 140, 150],
-                default_value=20),
+                'booster', choices=['gbtree', 'dart']), #  remove 'gblinear'
             CSH.UniformFloatHyperparameter(
-                'subsample', lower=0.5, upper=1, default_value=1),
+                'gamma', lower=0.0001, upper=100, log=True,
+                default_value=0.0001),
+            CSH.UniformIntegerHyperparameter(
+                'min_child_weight', lower=1, upper=10, default_value=1),
             CSH.UniformFloatHyperparameter(
                 'colsample_bytree', lower=0.5, upper=1, default_value=1),
+            CSH.UniformFloatHyperparameter(
+                'colsample_bylevel', lower=0.5, upper=1, default_value=1),
+            CSH.UniformFloatHyperparameter(
+                'colsample_bynode', lower=0.5, upper=1, default_value=1),
             CSH.UniformFloatHyperparameter(
                 'reg_alpha', lower=0.0001, upper=100, log=True,
                 default_value=0.0001),
             CSH.UniformFloatHyperparameter(
                 'reg_lambda', lower=0.0001, upper=100, log=True,
                 default_value=0.0001),
+            CSH.CategoricalHyperparameter(
+                'scale_pos_weight', choices=[1, half_balanced, balanced],
+                default_value=1),
         ])
         self._cs = cs
 
     def next(self, nthreads):
-        import lightgbm as lgb
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import Imputer
+        import xgboost
         params = dict(**self._cs.sample_configuration())
-        if params['class_weight'] == 'None':
-            del params['class_weight']
-        model = LGBMModel(
-            lgb.LGBMModel(
+        model = make_pipeline(
+            Imputer(),
+            xgboost.XGBClassifier(
                 **params,
-                objective='binary',
-                silent=True,
+                verbosity=0,
+                objective='binary:logistic',
                 random_state=6,  # Guaranteed to be random.
                 n_jobs=nthreads
-        ))
+            ))
         return self.make_task(model, dict())
