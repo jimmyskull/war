@@ -6,7 +6,7 @@ import war
 
 
 coloredlogs.install(
-    level=logging.DEBUG,
+    level=logging.INFO,
     fmt='%(asctime)s %(levelname)s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )

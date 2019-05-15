@@ -206,6 +206,9 @@ class Scheduler:
                 f"{agg['min']:.4f}".rjust(size_list[7]),
                 f"{agg['max']:.4f}".rjust(size_list[8]))
         logger.info('-' * cols)
+        probs = self._probs()
+        logger.info(ColorFormat('Probabilites: [%s]').magenta,
+                    ', '.join([f'{prob:.0%}' for prob in probs]))
 
     def available_slots(self):
         return self.nconsumers - self.slots_running
@@ -220,17 +223,7 @@ class Scheduler:
         logger.debug(ColorFormat('We have %d slots to use').light_gray,
                      available_slots)
         # Get best scores plus eps (to avoid division by zero)
-        scores = array(
-            [info['best']['agg']['avg'] \
-             + max(strat.sugar, strat.warm_up - info['finished'])
-             if (strat.max_tasks == -1
-                 or strat.max_tasks > info['finished'])
-                 and not info['exhausted']
-             else 0
-             for strat, info in self.strategies.items()])
-        probs = scores / sum(scores)
-        logger.info(ColorFormat('Probabilites: [%s]').magenta,
-                    ', '.join([f'{prob:.0%}' for prob in probs]))
+        probs = self._probs()
         # Sample from discrete probability function.
         selected = choice(len(self.strategies), size=available_slots, p=probs)
         selected = bincount(selected)
@@ -298,3 +291,15 @@ class Scheduler:
                     config['njobs_on_estimator'],
                     config['njobs_on_validation'])
         return task_list
+
+    def _probs(self):
+        scores = array(
+            [info['best']['agg']['avg'] \
+             + max(strat.sugar, strat.warm_up - info['finished'])
+             if (strat.max_tasks == -1
+                 or strat.max_tasks > info['finished'])
+                 and not info['exhausted']
+             else 0
+             for strat, info in self.strategies.items()])
+        probs = scores / sum(scores)
+        return probs
