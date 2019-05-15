@@ -69,16 +69,24 @@ class Task(object):
             status=status,
             error_info=error_info,
             agg=agg,
+            scoring=self._scoring_name,
             scores=scores,
             jobs=self.total_jobs
         )
         return result
 
+    def _scoring_name(self):
+        # pylint: disable=E1101
+        if isinstance(self.scoring, str):
+            return self.scoring
+        assert callable(self.scoring)
+        return self.scoring._score_func.__name__
+
     def id(self):
         info = [
             ('strategy', self.strategy.__class__.__name__),
             ('estimator', repr(self.estimator)),
-            ('scoring', self.scoring),
+            ('scoring', self._scoring_name()),
         ]
         if isinstance(self.params, dict):
             params = [(k, v) for k, v in self.params.items()]

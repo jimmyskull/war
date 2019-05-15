@@ -2,7 +2,7 @@
 class Result:
 
     def __init__(self, task, begin_time, elapsed_time, total_time, status,
-                 error_info, agg, scores, jobs):
+                 error_info, agg, scores, scoring, jobs):
         self.task = task
         self.begin_time = begin_time
         self.elapsed_time = elapsed_time
@@ -11,6 +11,7 @@ class Result:
         self.error_info = error_info
         self.agg = agg
         self.scores = scores
+        self.scoring = scoring
         self.jobs = jobs
 
     def __repr__(self):
@@ -30,6 +31,7 @@ class Result:
             'error_info': self.error_info,
             'agg': self.agg,
             'scores': self.scores,
+            'scoring': self.scoring,
             'params': dict(**self.task.params),
         }
         return data

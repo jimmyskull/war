@@ -48,9 +48,10 @@ class Engine:
         self.features = features
         self.target = target
 
-    def set_cv(self, cv):
+    def set_cv(self, cv, scoring='roc_auc'):
         """CV configuration."""
         self.cv = cv
+        self.scoring = scoring
 
     def set_slots(self, slots):
         """Slots should be up to the number of CPU cores."""
@@ -114,10 +115,9 @@ class Engine:
                 task.features = self.features
                 task.target = self.target
                 task.cv = nfolds
+                task.scoring = self.scoring
                 tasks.put(task)
             # Collect results for some time.
-            import select
-            import sys
             for _ in range(60):
                 if sched.available_slots() > num_consumers // 2:
                     break
@@ -151,7 +151,7 @@ class Engine:
                     logger.warning('Command not recognized: %s', repr(char))
                 if results.empty():
                     continue
-                while not results.empty():
+                if not results.empty():
                     result = results.get()
                     sched.collect(result)
 

@@ -284,8 +284,7 @@ class Scheduler:
                     if not task:
                         raise ValueError('no task received to execute')
                     task.n_jobs = config['njobs_on_validation']
-                    task.total_jobs = config['njobs_on_estimator'] * \
-                        config['njobs_on_validation']
+                    task.total_jobs = allocated_slots_per_task
                     self.strategies[strat]['running'] += 1
                     created += 1
                     self.slots_running += allocated_slots_per_task
@@ -312,9 +311,9 @@ class Scheduler:
 
     def _probs(self):
         weights = list()
-        min_score = min(max(0, info['best']['agg']['avg'] + strat.sugar)
+        min_score = min(max(0, info['best']['agg']['avg'] + strat.weight)
                         for strat, info in self.strategies.items())
-        max_score = max(max(1, info['best']['agg']['avg'] + strat.sugar)
+        max_score = max(max(1, info['best']['agg']['avg'] + strat.weight)
                         for strat, info in self.strategies.items())
         for strat, info in self.strategies.items():
             max_tasks = strat.max_tasks
@@ -326,7 +325,7 @@ class Scheduler:
             best_score = min(1, max(0, best_avg_score))
             norm_score = (best_score - min_score) / (max_score - min_score)
             warm_up = 2 * (strat.warm_up - info['finished'])
-            weight = max(0, max(norm_score + strat.sugar, warm_up))
+            weight = max(0, max(norm_score + strat.weight, warm_up))
             weights.append(weight)
         weights = array(weights) + 1e-6
         probs = weights / sum(weights)

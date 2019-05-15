@@ -13,7 +13,7 @@ def main():
 
     engine = war.Engine()
     engine.set_data(X, y)
-    engine.set_cv(3) # roc_auc by default
+    engine.set_cv(3, scoring=war.metrics.gini)
     engine.set_slots(8)
     engine.add(config.STRATEGIES)
     engine.start()

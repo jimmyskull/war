@@ -8,14 +8,18 @@ from war.cformat import ColorFormat
 class Strategy:
 
     def __init__(self, name=None, max_parallel_tasks=1,
-                 max_threads_per_estimator=1, max_tasks=-1):
+                 max_threads_per_estimator=1, max_tasks=-1,
+                 weight=0.01, warm_up=20):
         self.name = name if name else self.__class__.__name__
         self.max_parallel_tasks = max_parallel_tasks
         self.max_threads_per_estimator = max_threads_per_estimator
         self.max_tasks = max_tasks
-        self.sugar = 0.01  # Additional weight for probability scheduling.
-        self.warm_up = 20  # Ask to run at least warm_up tasks before
-                           # being susceptible to be dominated.
+        # Additional weight for probability scheduling.
+        # May be positive and negative.
+        self.weight = weight
+        # Ask to run at least warm_up tasks before
+        # being susceptible to be dominated.
+        self.warm_up = warm_up
         # Use class name as userspace, to avoid spaces and special
         # characters in the path.
         self.database = Database(namespace=self.__class__.__name__)
