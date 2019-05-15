@@ -56,5 +56,5 @@ class RandomSearchLogisticRegressionL1(Strategy):
         model = make_pipeline(
             Imputer(),
             StandardScaler(),
-            LogisticRegression(**params))
+            LogisticRegression(**params, random_state=6))
         return self.make_task(model, params)

@@ -44,8 +44,8 @@ class PCANaiveBayes(Strategy):
                 Imputer(),
                 PCA(n_components=self.curr),
                 GaussianNB())
+            task = self.make_task(model, dict(n_components=self.curr))
             self.curr += 1
-            task = self.make_task(model, dict())
             if task:
                 return task
         raise StopIteration

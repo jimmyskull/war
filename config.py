@@ -14,7 +14,7 @@ coloredlogs.install(
 STRATEGIES = [
     war.strategies.ada.RandomSearchAdaBoost(),
     war.strategies.gb.RandomSearchGradientBoosting(),
-    # war.strategies.keras.RandomSearchKerasMLP(),
+    war.strategies.keras.RandomSearchKerasMLP(),
     war.strategies.lda.LDA(),
     war.strategies.lda.PCALDA(),
     war.strategies.lgb.RandomSearchLGBM(),

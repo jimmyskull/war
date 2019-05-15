@@ -29,5 +29,5 @@ class RandomSearchGradientBoosting(Strategy):
         params = dict(**self._cs.sample_configuration())
         model = make_pipeline(
             Imputer(),
-            GradientBoostingClassifier(**params))
+            GradientBoostingClassifier(**params, random_state=6))
         return self.make_task(model, params)

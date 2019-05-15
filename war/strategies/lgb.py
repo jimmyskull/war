@@ -81,4 +81,4 @@ class RandomSearchLGBM(Strategy):
                 random_state=6,  # Guaranteed to be random.
                 n_jobs=nthreads
         ))
-        return self.make_task(model, dict())
+        return self.make_task(model, params)

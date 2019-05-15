@@ -28,5 +28,8 @@ class RandomSearchRandomForest(Strategy):
         params = dict(**self._cs.sample_configuration())
         model = make_pipeline(
             Imputer(),
-            RandomForestClassifier(**params, n_jobs=nthreads))
+            RandomForestClassifier(
+                **params,
+                random_state=6,
+                n_jobs=nthreads))
         return self.make_task(model, params)
