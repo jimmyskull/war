@@ -175,6 +175,8 @@ class Scheduler:
             [len(('{} ({:5.1%})'.format(sec2time(info['cumulative_time'], 0),
                                         info['cumulative_time'] / total_time)))
              for info in self.strategies.values()])
+        # Probs
+        probs = self._probs()
         # Build header
         header_list = list()
         size_list = list()
@@ -192,6 +194,7 @@ class Scheduler:
             ('95% CI', 6),
             ('Min', 6),
             ('Max', 6),
+            ('Prob', 4),
         ]
         for hinfo in COLS:
             _add_header(*hinfo)
@@ -207,7 +210,7 @@ class Scheduler:
             agg = info['best']['agg']
             to_ci = 2.0 / (numpy.sqrt(len(info['best']['scores'])) + 1e-4)
             logger.info(
-                '\033[%sm%s | %s | %s | %s | %s | %s | %s | %s | %s\033[0m',
+                '\033[%sm%s | %s | %s | %s | %s | %s | %s | %s | %s | %s\033[0m',
                 '1;34' if agg['avg'] == best else '0',
                 str(idx).rjust(size_list[0]),
                 strat.name.ljust(size_list[1]),
@@ -220,11 +223,10 @@ class Scheduler:
                 f"{agg['avg']:.4f}".rjust(size_list[5]),
                 f"{agg['std'] * to_ci:.4f}".rjust(size_list[6]),
                 f"{agg['min']:.4f}".rjust(size_list[7]),
-                f"{agg['max']:.4f}".rjust(size_list[8]))
+                f"{agg['max']:.4f}".rjust(size_list[8]),
+                f"{probs[idx - 1]:.0%}".rjust(size_list[9])
+            )
         logger.info('-' * cols)
-        probs = self._probs()
-        logger.info(ColorFormat('Probabilites: [%s]').magenta,
-                    ', '.join([f'{prob:.0%}' for prob in probs]))
 
     def available_slots(self):
         return self.nconsumers - self.slots_running
