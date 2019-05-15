@@ -90,7 +90,7 @@ class Scheduler:
         self.slots_running -= result.jobs
         assert self.slots_running >= 0
         for strat in self.strategies:
-            if hash(strat) == result.task.strategy_id:
+            if hash(strat) != result.task.strategy_id:
                 continue
             self.tasks_finished += 1
             strat.collect(result)
@@ -248,7 +248,6 @@ class Scheduler:
             running = config['tasks'] * \
                 config['njobs_on_validation'] * \
                 config['njobs_on_estimator']
-            self.slots_running += running
             created = 0
             for tid in range(config['tasks']):
                 if (config['njobs_on_estimator'] == 0
@@ -261,9 +260,10 @@ class Scheduler:
                     task.n_jobs = config['njobs_on_validation']
                     task.total_jobs = config['njobs_on_estimator'] * \
                         config['njobs_on_validation']
-                    task_list.append(task)
-                    created += 1
                     self.strategies[strat]['running'] += 1
+                    created += 1
+                    self.slots_running += 1
+                    task_list.append(task)
                 except StopIteration:
                     self.strategies[strat]['exhausted'] = True
                     logger.info(

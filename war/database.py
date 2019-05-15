@@ -77,7 +77,6 @@ class Database:
         with open(object_path, 'rb') as file:
             decompressed = zlib.decompress(file.read())
             obj = pickle.loads(decompressed)
-            logger.debug(ColorFormat('Loaded object %s').dark_gray, obj)
             return obj
 
     def store(self, oid, obj):

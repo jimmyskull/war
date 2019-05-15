@@ -24,7 +24,6 @@ class RandomSearchRandomForest(Strategy):
         self._cs = cs
 
     def next(self, nthreads):
-        assert nthreads == 1
         params = dict(**self._cs.sample_configuration())
         model = make_pipeline(
             Imputer(),

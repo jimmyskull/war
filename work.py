@@ -1,8 +1,5 @@
-import logging
-import warnings
-
+# pylint: disable=C0103,C0111
 from pandas import read_csv
-import coloredlogs
 
 import war
 
@@ -10,20 +7,9 @@ import config
 
 
 def main():
-    # pylint: disable=C0103
-    coloredlogs.install(
-        level=logging.DEBUG,
-        #fmt='%(asctime)s %(levelname)s %(module)s %(message)s',
-        fmt='%(asctime)s %(levelname)s %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-
     train = read_csv('/home/jimmy/dev/chef/GiveMeSomeCredit/cs-training.csv',
                      index_col=0)
-    # test = read_csv('/home/jimmy/dev/chef/GiveMeSomeCredit/cs-test.csv',
-    #                 index_col=0)
     X, y = train.drop('SeriousDlqin2yrs', axis=1), train['SeriousDlqin2yrs']
-
 
     engine = war.Engine()
     engine.set_data(X, y)

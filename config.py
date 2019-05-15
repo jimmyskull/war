@@ -1,5 +1,15 @@
+import logging
+
+import coloredlogs
+
 import war
 
+
+coloredlogs.install(
+    level=logging.DEBUG,
+    fmt='%(asctime)s %(levelname)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 STRATEGIES = [
     war.strategies.gb.RandomSearchGradientBoosting(),
@@ -7,7 +17,7 @@ STRATEGIES = [
     war.strategies.lda.PCALDA(),
     war.strategies.linear.RandomSearchLogisticRegressionL1(),
     war.strategies.linear.RandomSearchLogisticRegressionL2(),
-    war.strategies.mlp.RandomSearchPCAMLP(),
+    # war.strategies.mlp.RandomSearchPCAMLP(),
     war.strategies.nb.NaiveBayes(),
     war.strategies.nb.PCANaiveBayes(),
     war.strategies.rf.RandomSearchRandomForest(),

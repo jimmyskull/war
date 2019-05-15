@@ -2,6 +2,8 @@ import multiprocessing
 import logging
 import time
 
+from war.cformat import ColorFormat
+from war.input import getch
 from war.scheduler import Scheduler
 
 
@@ -102,7 +104,8 @@ class Engine:
 
         sched.report_results()
 
-        while True:
+        keep_running = True
+        while keep_running:
             # Get new tasks
             new_tasks = sched.next()
             # Add tasks to the queue
@@ -112,11 +115,34 @@ class Engine:
                 task.cv = nfolds
                 tasks.put(task)
             # Collect results for some time.
+            import select
+            import sys
             for _ in range(60):
                 if sched.available_slots() > num_consumers // 2:
                     break
+                # while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                char = getch()
+                if char == 'r':
+                    sched.report_results()
+                elif char == 'd':
+                    logger.info('Changed log level to DEBUG')
+                    logging.getLogger().setLevel(logging.DEBUG)
+                elif char == 'i':
+                    logging.getLogger().setLevel(logging.INFO)
+                    logger.info('Changed log level to INFO')
+                elif char in ['q', '\x03']:
+                    keep_running = False
+                    break
+                elif char == 'h':
+                    logger.info(ColorFormat('Commands:').bold)
+                    logger.info(' r  Report scheduler information.')
+                    logger.info(' i  Set information log level.')
+                    logger.info(' d  Set debugging log level.')
+                    logger.info(' h  Show help.')
+                    logger.info(' q  Quit.')
+                elif char is not None:
+                    logger.warning('Command not recognized: %s', repr(char))
                 if results.empty():
-                    time.sleep(1)
                     continue
                 while not results.empty():
                     result = results.get()
@@ -124,3 +150,7 @@ class Engine:
 
             if sched.improved_since_last_report:
                 sched.report_results()
+
+        for worker in consumers:
+            worker.terminate()
+        logger.info('Bye.')

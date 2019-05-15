@@ -29,10 +29,11 @@ class Strategy:
         self.load_cache()
 
     def load_cache(self):
+        logger = logging.getLogger('war.strategy')
+        logger.debug(ColorFormat('%s: loading cache').dark_gray, self.name)
         best = dict(agg=dict(avg=0, std=0, min=0, max=0), scores=list())
         cumulative_time = 0
         count = 0
-        logger = logging.getLogger('war.strategy')
         for _, result in self.database.iterate():
             if result['type'] != 'result':
                 continue
@@ -64,7 +65,4 @@ class Strategy:
     def collect(self, result):
         self.database.store(
             oid=result.task.id(),
-            obj={
-                'type': 'result',
-                'data': result.data(),
-            })
+            obj={'type': 'result', 'data': result.data()})
