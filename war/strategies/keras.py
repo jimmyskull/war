@@ -1,11 +1,3 @@
-from keras.layers import Dense, Dropout
-from keras.models import Sequential
-from keras.wrappers.scikit_learn import KerasClassifier
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import Imputer
-import ConfigSpace as CS
-import ConfigSpace.hyperparameters as CSH
-
 from war.core import Strategy
 
 
@@ -19,6 +11,9 @@ class RandomSearchKerasMLP(Strategy):
         self._cs = None
 
     def init(self, info):
+        # pylint: disable=I1101
+        import ConfigSpace as CS
+        import ConfigSpace.hyperparameters as CSH
         self._nfeatures = info['features'].shape[1]
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters([
@@ -41,6 +36,11 @@ class RandomSearchKerasMLP(Strategy):
         self._cs = cs
 
     def next(self, nthreads):
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import Imputer
+        from keras.layers import Dense, Dropout
+        from keras.models import Sequential
+        from keras.wrappers.scikit_learn import KerasClassifier
         assert nthreads == 1
         params = dict(**self._cs.sample_configuration())
         # create model

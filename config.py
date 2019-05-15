@@ -22,4 +22,5 @@ STRATEGIES = [
     # war.strategies.rf.RandomSearchRandomForest(),
     # war.strategies.svm.RandomSearchPCASVMLinear(),
     # war.strategies.keras.RandomSearchKerasMLP(),
+    war.strategies.lgb.RandomSearchLGBM(),
 ]

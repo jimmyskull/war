@@ -1,8 +1,3 @@
-from sklearn.decomposition import PCA
-from sklearn.naive_bayes import GaussianNB
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import Imputer
-
 from war.core import Strategy
 
 
@@ -15,6 +10,9 @@ class NaiveBayes(Strategy):
                          max_tasks=1)
 
     def next(self, nthreads):
+        from sklearn.naive_bayes import GaussianNB
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import Imputer
         assert nthreads == 1
         model = make_pipeline(
             Imputer(),
@@ -36,6 +34,10 @@ class PCANaiveBayes(Strategy):
         self.curr = 1
 
     def next(self, nthreads):
+        from sklearn.decomposition import PCA
+        from sklearn.naive_bayes import GaussianNB
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import Imputer
         assert nthreads == 1
         while self.curr < self.nfeatures:
             model = make_pipeline(

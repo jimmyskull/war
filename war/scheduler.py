@@ -74,6 +74,7 @@ class Scheduler:
         self.tasks_finished = 0
         self.report_at_ntasks = 100
         self.improved_since_last_report = False
+        self.last_error = None
 
     def _populate(self, strategy_list):
         for strat in strategy_list:
@@ -103,6 +104,7 @@ class Scheduler:
                     result.error_info['message'])
                 logger.error('Task id: %s/%s', strat.__class__.__name__,
                              result.task.id())
+                self.last_error = result
                 return
             score = result.agg['avg']
             if self.strategies[strat]['best']['agg']['avg'] < score:
@@ -123,6 +125,19 @@ class Scheduler:
             assert self.strategies[strat]['running'] >= 0
             return
         raise ValueError('Strategy not found not mark task as finished.')
+
+    def report_last_error(self):
+        logger = logging.getLogger('war.scheduler')
+        if not self.last_error:
+            logger.info('No error occurred during this session.')
+            return
+        message = self.last_error.error_info['message']
+        traceback_msg = self.last_error.error_info['traceback']
+        print('\n')
+        print(str(ColorFormat('Traceback:').bold))
+        print(traceback_msg)
+        print(str(ColorFormat('Message:').bold))
+        print('\t' + message)
 
     def report_results(self):
         self.improved_since_last_report = False

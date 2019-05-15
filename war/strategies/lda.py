@@ -1,8 +1,3 @@
-from sklearn.decomposition import PCA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import Imputer
-
 from war.core import Strategy
 
 
@@ -13,6 +8,9 @@ class LDA(Strategy):
                          max_threads_per_estimator=1, max_tasks=1)
 
     def next(self, nthreads):
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import Imputer
         assert nthreads == 1
         model = make_pipeline(
             Imputer(),
@@ -34,6 +32,10 @@ class PCALDA(Strategy):
         self.curr = 1
 
     def next(self, nthreads):
+        from sklearn.decomposition import PCA
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import Imputer
         assert nthreads == 1
         while self.curr < self.nfeatures:
             model = make_pipeline(

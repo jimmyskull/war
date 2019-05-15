@@ -133,13 +133,16 @@ class Engine:
                 elif char in ['q', '\x03']:
                     keep_running = False
                     break
+                elif char == 'e':
+                    sched.report_last_error()
                 elif char == 'h':
                     logger.info(ColorFormat('Commands:').bold)
-                    logger.info(' r  Report scheduler information.')
-                    logger.info(' i  Set information log level.')
                     logger.info(' d  Set debugging log level.')
+                    logger.info(' e  Show last error information')
                     logger.info(' h  Show help.')
+                    logger.info(' i  Set information log level.')
                     logger.info(' q  Quit.')
+                    logger.info(' r  Report scheduler information.')
                 elif char is not None:
                     logger.warning('Command not recognized: %s', repr(char))
                 if results.empty():
