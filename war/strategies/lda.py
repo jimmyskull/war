@@ -33,10 +33,6 @@ class PCALDA(Strategy):
         self.nfeatures = info['features'].shape[1]
         self.curr = 1
 
-    def collect(self, result):
-        super().collect(result)
-        self.max_parallel_tasks = 0
-
     def next(self, nthreads):
         assert nthreads == 1
         while self.curr < self.nfeatures:
