@@ -2,6 +2,7 @@ import logging
 
 from war.database import Database
 from war.task import Task
+from war.cformat import ColorFormat
 
 
 class Strategy:
@@ -42,7 +43,7 @@ class Strategy:
             if not best or best['agg']['avg'] < result['agg']['avg']:
                 best = result
             cumulative_time += result['elapsed_time']
-        logger.info('\033[33m%s: loaded %d cached results\033[0m',
+        logger.info(ColorFormat('%s: loaded %d cached results').yellow,
                     self.name, count)
         self.cache['cumulative_time'] = cumulative_time
         self.cache['best'] = best
@@ -62,9 +63,8 @@ class Strategy:
 
     def collect(self, result):
         self.database.store(
-            id=result.task.id(),
-            object={
+            oid=result.task.id(),
+            obj={
                 'type': 'result',
                 'data': result.data(),
-            }
-        )
+            })

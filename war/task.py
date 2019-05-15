@@ -86,5 +86,5 @@ class Task(object):
             params = OrderedDict(**self.params)
         info.append(('params', str(params)))
         info = sorted(info)
-        sha1 = hashlib.sha256(json.dumps(info).encode('utf-8'))
+        sha1 = hashlib.sha1(json.dumps(info).encode('utf-8'))
         return sha1.hexdigest()

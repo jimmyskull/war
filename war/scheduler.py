@@ -6,6 +6,8 @@ from numpy.random import choice
 import numpy
 from scipy.optimize import minimize
 
+from war.cformat import ColorFormat
+
 
 def sec2time(sec, n_msec=3):
     """Convert seconds to 'D days, HH:MM:SS.FFF'."""
@@ -105,8 +107,8 @@ class Scheduler:
             score = result.agg['avg']
             if self.strategies[strat]['best']['agg']['avg'] < score:
                 logger.info(
-                    ('\033[1;32m%s\033[0m\033[32m'
-                     ' improvement: %.4f -> %.4f\033[0m'),
+                    (str(ColorFormat('%s').bold.green) +
+                     str(ColorFormat(' improvement: %.4f -> %.4f').green)),
                     strat.name,
                     self.strategies[strat]['best']['agg']['avg'],
                     score
@@ -147,7 +149,7 @@ class Scheduler:
         size_list = list()
 
         def _add_header(x, size):
-            header_list.append('\033[1m{}\033[0m'.format(x.ljust(size)))
+            header_list.append(str(ColorFormat(x.ljust(size)).bold))
             size_list.append(size)
         COLS = [
             ('ID', 2),
@@ -166,8 +168,8 @@ class Scheduler:
         cols = sum([size for _, size in COLS]) + 3 * (len(COLS) - 1)
         col_sep = ' | '.join(['-' * size for size in size_list])
 
-        logger.info('\033[95;1mOverall scheduler info:\033[0m')
-        logger.info('\033[0m' + '-' * cols + '\033[0m')
+        logger.info(ColorFormat('Overall scheduler info:').bold.magenta)
+        logger.info('-' * cols)
         logger.info(header)
         logger.info(col_sep)
         for idx, (strat, info) in enumerate(self.strategies.items(), 1):
@@ -188,7 +190,7 @@ class Scheduler:
                 f"{agg['std'] * to_ci:.4f}".rjust(size_list[6]),
                 f"{agg['min']:.4f}".rjust(size_list[7]),
                 f"{agg['max']:.4f}".rjust(size_list[8]))
-        logger.info('\033[0m' + '-' * cols + '\033[0m')
+        logger.info('-' * cols)
 
     def available_slots(self):
         return self.nconsumers - self.slots_running
@@ -200,7 +202,8 @@ class Scheduler:
         available_slots = self.available_slots()
         if not available_slots:
             return []
-        logger.debug('\033[90mWe have %d slots to use\033[0m', available_slots)
+        logger.debug(ColorFormat('We have %d slots to use').light_gray,
+                     available_slots)
         # Get best scores plus eps (to avoid division by zero)
         scores = array(
             [info['best']['agg']['avg'] \
@@ -210,8 +213,8 @@ class Scheduler:
                  and not info['exhausted']
              else 0
              for strat, info in self.strategies.items()])
-        probs = scores / (sum(scores) + 1e-4)
-        logger.info('\033[35mProbabilites: [%s]\033[0m',
+        probs = scores / sum(scores)
+        logger.info(ColorFormat('Probabilites: [%s]').magenta,
                     ', '.join([f'{prob:.0%}' for prob in probs]))
         # Sample from discrete probability function.
         selected = choice(len(self.strategies), size=available_slots, p=probs)
@@ -264,17 +267,17 @@ class Scheduler:
                 except StopIteration:
                     self.strategies[strat]['exhausted'] = True
                     logger.info(
-                        '\033[96;1m%s is exhausted\033[0m',
+                        ColorFormat('%s is exhausted').bold.bottle_green,
                         strat.name)
                     break
                 except Exception as err:
                     logger.error(
-                        '\033[31mFailed to create a task for %s: %s\033[0m',
+                        'Failed to create a task for %s: %s',
                         strat.name,
                         '{}: {}'.format(type(err).__name__, err))
             if created:
                 logger.info(
-                    ('\033[38;5;241mNew %d × %s cv=%d fit=%d\033[0m'),
+                    ColorFormat('New %d × %s cv=%d fit=%d').dark_gray,
                     created,
                     strat.name,
                     config['njobs_on_estimator'],

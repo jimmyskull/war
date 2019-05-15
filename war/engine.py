@@ -5,10 +5,6 @@ import time
 from war.scheduler import Scheduler
 
 
-def gently_stop(run):
-    tr
-
-
 class Worker(multiprocessing.Process):
 
     def __init__(self, task_queue, result_queue):
@@ -107,7 +103,6 @@ class Engine:
         sched.report_results()
 
         while True:
-
             # Get new tasks
             new_tasks = sched.next()
             # Add tasks to the queue
@@ -116,22 +111,16 @@ class Engine:
                 task.target = self.target
                 task.cv = nfolds
                 tasks.put(task)
-
-            for _ in range(10):
-
-                # Collect available results
-                if not results.empty():
-                    # logger.debug('Collecting results')
-                    # Start printing results
-                    while not results.empty():
-                        result = results.get()
-                        # logger.debug('Result: %s', result)
-                        sched.collect(result)
-                else:
-                    time.sleep(1)
-
+            # Collect results for some time.
+            for _ in range(60):
                 if sched.available_slots() > num_consumers // 2:
                     break
+                if results.empty():
+                    time.sleep(1)
+                    continue
+                while not results.empty():
+                    result = results.get()
+                    sched.collect(result)
 
             if sched.improved_since_last_report:
                 sched.report_results()
