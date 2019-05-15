@@ -38,7 +38,7 @@ class Database:
             logger.debug(
                 ColorFormat('Writing compressed object in %s').dark_gray,
                 tmp.name)
-            compressed = zlib.compress(content, level=9)
+            compressed = zlib.compress(content, level=1)
             tmp.write(compressed)
             tmp.close()
             logger.debug(

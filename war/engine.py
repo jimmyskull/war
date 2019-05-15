@@ -54,6 +54,7 @@ class Engine:
 
     def set_slots(self, slots):
         """Slots should be up to the number of CPU cores."""
+        assert slots > 1
         self.slots = slots
 
     def start(self):
@@ -125,18 +126,21 @@ class Engine:
                 if char == 'r':
                     sched.report_results()
                 elif char == 'd':
-                    logger.info('Changed log level to DEBUG')
+                    logger.info('Changed log level to debug')
                     logging.getLogger().setLevel(logging.DEBUG)
                 elif char == 'i':
                     logging.getLogger().setLevel(logging.INFO)
-                    logger.info('Changed log level to INFO')
+                    logger.info('Changed log level to info')
                 elif char in ['q', '\x03']:
                     keep_running = False
                     break
                 elif char == 'e':
                     sched.report_last_error()
+                elif char in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                    sched.report_best(int(char))
                 elif char == 'h':
                     logger.info(ColorFormat('Commands:').bold)
+                    logger.info('1-9 Best results for a strategy.')
                     logger.info(' d  Set debugging log level.')
                     logger.info(' e  Show last error information')
                     logger.info(' h  Show help.')

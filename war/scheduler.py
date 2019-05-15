@@ -139,6 +139,22 @@ class Scheduler:
         print(str(ColorFormat('Message:').bold))
         print('\t' + message)
 
+    def report_best(self, idx):
+        logger = logging.getLogger('war.scheduler')
+        if idx > len(self.strategies):
+            logger.error('No strategy was found at index %d', idx)
+            return
+        import pprint
+        from pygments import highlight
+        from pygments.formatters import TerminalFormatter
+        from pygments.lexers import PythonLexer
+        pp = pprint.PrettyPrinter()
+        strategy = list(self.strategies.keys())[idx - 1]
+        print(ColorFormat(strategy.name).bold)
+        code = pp.pformat(strategy.cache)
+        fmt = highlight(code, PythonLexer(), TerminalFormatter())
+        print(fmt)
+
     def report_results(self):
         self.improved_since_last_report = False
         logger = logging.getLogger('war.scheduler')
