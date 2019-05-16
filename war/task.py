@@ -82,17 +82,23 @@ class Task(object):
         assert callable(self.scoring)
         return self.scoring._score_func.__name__
 
+    def full_id(self):
+        name = self.strategy.__class__.__name__
+        return f'{name}/{self.id()}'
+
     def id(self):
         info = [
             ('strategy', self.strategy.__class__.__name__),
-            ('estimator', repr(self.estimator)),
-            ('scoring', self._scoring_name()),
+            # ('estimator', self.estimator)),
+            # FIXME: We cannot use scoring here because it is changed
+            # after instantiation by the engine.
+            # ('scoring', self._scoring_name()),
         ]
-        if isinstance(self.params, dict):
-            params = [(k, v) for k, v in self.params.items()]
-        else:
+        if not isinstance(self.params, dict):
             params = OrderedDict(**self.params)
+        params = [(k, v) for k, v in self.params.items()]
+        params = sorted(params, key=lambda x: x[0])
         info.append(('params', str(params)))
-        info = sorted(info)
+        info = sorted(info, key=lambda x: x[0])
         sha1 = hashlib.sha1(json.dumps(info).encode('utf-8'))
         return sha1.hexdigest()

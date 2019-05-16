@@ -63,6 +63,8 @@ class Strategy:
         )
         if self.database.find(task.id()):
             return None
+        logger = logging.getLogger('war.strategy')
+        logger.debug(ColorFormat('New task %s').dark_gray, task.full_id())
         return task
 
     def collect(self, result):
