@@ -38,24 +38,24 @@ def optimize_task_config(available_slots, max_parallel_tasks,
         method='SLSQP',
         bounds=(
             (1, max_parallel_tasks),
-            (1, max_estimator_njobs),
-            (1, max_validation_njobs)))
+            (1, max_validation_njobs),
+            (1, max_estimator_njobs)))
     fx, cx = floor(opt_res.x), ceil(opt_res.x)
     borders = stack([fx - 1, fx, cx, cx + 1])
 
     best_p, best = None, 0
-    for on_task, on_est, on_cv in product(*borders.transpose().tolist()):
-        total = on_task * on_est * on_cv
+    for on_task, on_cv, on_est in product(*borders.transpose().tolist()):
+        total = on_task * on_cv * on_est
         if (on_task > max_parallel_tasks
-            or on_est > max_estimator_njobs
-                or on_cv > max_validation_njobs):
+            or on_cv > max_validation_njobs
+            or on_est > max_estimator_njobs):
             continue
         if total == 0 or total > available_slots or total < best:
             continue
         best_p = dict(
             tasks=int(on_task),
-            njobs_on_estimator=int(on_est),
-            njobs_on_validation=int(on_cv))
+            njobs_on_validation=int(on_cv),
+            njobs_on_estimator=int(on_est))
         best = total
 
     if not best_p:
