@@ -42,8 +42,8 @@ class PCAQDA(Strategy):
                 Imputer(),
                 PCA(n_components=self.curr),
                 QuadraticDiscriminantAnalysis())
+            task = self.make_task(model, dict(n_components=self.curr))
             self.curr += 1
-            task = self.make_task(model, dict())
             if task:
                 return task
         raise StopIteration
