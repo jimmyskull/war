@@ -88,20 +88,20 @@ class RandomSearchKerasMLP(Strategy):
         cs = CS.ConfigurationSpace()
         cs.add_hyperparameters([
             CSH.UniformIntegerHyperparameter(
-                'epochs', lower=50, upper=1000, default_value=100),
+                'epochs', lower=50, upper=100, default_value=100),
             CSH.CategoricalHyperparameter(
-                'activation_0', choices=['softmax', 'relu', 'sigmoid']),
+                'activation_0', choices=['relu']),
             CSH.UniformFloatHyperparameter(
-                'dropout_1', lower=0.0, upper=0.9, default_value=0.5),
+                'dropout_1', lower=0.0, upper=0.7, default_value=0.5),
             CSH.UniformIntegerHyperparameter(
-                'size_2', lower=2, upper=self._nfeatures * 2,
-                default_value=self._nfeatures // 2 + 1),
+                'size_2', lower=2, upper=self._nfeatures,
+                default_value=max(1, self._nfeatures // 2)),
             CSH.CategoricalHyperparameter(
-                'activation_2', choices=['softmax', 'relu', 'sigmoid']),
+                'activation_2', choices=['relu']),
             CSH.UniformFloatHyperparameter(
                 'dropout_3', lower=0.0, upper=0.9, default_value=0.5),
             CSH.CategoricalHyperparameter(
-                'activation_4', choices=['softmax', 'relu', 'sigmoid']),
+                'activation_4', choices=['sigmoid']),
         ])
         self._cs = cs
 
