@@ -21,6 +21,20 @@ def input_int(message, bounds=None):
         logger.setLevel(level)
 
 
+def input_float(message, bounds=None):
+    logger = logging.getLogger()
+    level = logger.level
+    logger.setLevel(logging.CRITICAL)
+    try:
+        value = float(input(message))
+        if bounds:
+            if bounds[0] > value or bounds[1] < value:
+                raise ValueError('value %f is not in [%.1f, %.1f]' % (value, *bounds))
+        return value
+    finally:
+        logger.setLevel(level)
+
+
 class Worker(multiprocessing.Process):
 
     def __init__(self, task_queue, result_queue):
@@ -175,6 +189,19 @@ class Engine:
                         sched.report_best(st_id)
                     except ValueError as err:
                         logger.error('Could not get strategy: %s', err)
+                elif char == 'a':
+                    bounds = (1, len(self.strategies))
+                    msg = 'Select a strategy by ID (1-{}): '.format(bounds[1])
+                    st_id = -1
+                    try:
+                        st_id = input_int(msg, bounds=bounds)
+                    except ValueError as err:
+                        logger.error('Could not get strategy: %s', err)
+                    if st_id > 0:
+                        st_ob = sched.strategy_by_id(st_id)
+                        msg = 'Set a weight (current={:.4f}): '.format(st_ob.weight)
+                        weight = input_float(msg)
+                        sched.set_weight(st_id, weight)
                 elif char == 'm':
                     bounds = (2, num_consumers)
                     msg = ('Select maximum number of slots '
@@ -202,6 +229,7 @@ class Engine:
                                ('   c    Force execution of cooperation procedure '
                                         '(can run outside of cooperation mode).'))
                     logger.info('   e    Show last task error information.')
+                    logger.info('   a    Set weight of a strategy.')
                     logger.info('   u    Report CPU usage of main thread (engine + UI + scheduler).')
                     logger.info('   w    Report CPU usage of worker processes.')
                     logger.info('   d    Set debugging log level.')

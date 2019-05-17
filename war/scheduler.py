@@ -199,6 +199,19 @@ class Scheduler:
         print(str(ColorFormat('Message:').bold))
         print('\t' + message)
 
+    def strategy_by_id(self, idx):
+        return list(self.strategies.keys())[idx - 1]
+
+    def set_weight(self, idx, weight):
+        strategy = self.strategy_by_id(idx)
+        curr = strategy.weight
+        strategy.weight = weight
+        logger = logging.getLogger('war.scheduler')
+        logger.info(
+            'Strategy %s weight changed from %.4f to %.4f.',
+            strategy.name,
+            curr, strategy.weight)
+
     def report_best(self, idx):
         logger = logging.getLogger('war.scheduler')
         if idx > len(self.strategies):
@@ -209,7 +222,7 @@ class Scheduler:
         from pygments.formatters import TerminalFormatter
         from pygments.lexers import PythonLexer
         pp = pprint.PrettyPrinter()
-        strategy = list(self.strategies.keys())[idx - 1]
+        strategy = self.strategy_by_id(idx)
         print(ColorFormat(strategy.name).bold)
         code = pp.pformat(self.strategies[strategy])
         fmt = highlight(code, PythonLexer(), TerminalFormatter())
