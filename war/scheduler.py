@@ -104,6 +104,26 @@ class Scheduler:
                 'exhausted': False
             }
 
+    def set_max_slots(self, value):
+        if self.max_slots == value:
+            return
+        if value > self.nconsumers:
+            raise ValueError('Maximum number of slots must be up to {}'.format(
+                self.nconsumers))
+        curr = self.max_slots
+        self.max_slots = value
+        logger = logging.getLogger('war.scheduler')
+        logger.info(
+            ColorFormat('Changed number of slots from %d to %d').yellow,
+            curr, self.max_slots)
+        excess = self.slots_running - self.max_slots
+        if excess > 0:
+            logger.info(
+                ColorFormat(
+                    'There are %d slots above the current limit. '
+                    'Waiting for end of normal execution.').yellow,
+                excess )
+
     def collect(self, result):
         logger = logging.getLogger('war.scheduler')
         self.slots_running -= result.jobs
@@ -415,10 +435,7 @@ class Scheduler:
         probs = weights / sum(weights)
         return probs
 
-    def cooperate(self, force=False):
-        if not force and (time.time() - self.last_coop_time) < 60:
-            return
-        self.last_coop_time = time.time()
+    def _averate_worker_cpu_usage(self):
         logger = logging.getLogger('war.scheduler')
         perc_expected = self.slots_running / self.cpu_count
         ratios = list()
@@ -430,11 +447,27 @@ class Scheduler:
             if ratio > 0:
                 ratios.append(ratio)
         if not ratios:
-            return
-        ratio = numpy.mean(ratios)
+            return (0, 0)
+        return (len(ratios), numpy.mean(ratios))
+
+    def report_worker_usage(self):
+        logger = logging.getLogger('war.scheduler')
+        nactive, ratio = self._averate_worker_cpu_usage()
         logger.info(
-            ColorFormat('Average active worker CPU usage: %.2f').cyan,
-            ratio)
+            ColorFormat('%d active workers, average CPU usage: %.0f%%').cyan,
+            nactive, ratio * 100)
+
+    def cooperate(self, force=False):
+        if not force and (time.time() - self.last_coop_time) < 60:
+            return
+        self.last_coop_time = time.time()
+        logger = logging.getLogger('war.scheduler')
+        nactive, ratio = self._averate_worker_cpu_usage()
+        logger.info(
+            ColorFormat('%d active workers, average CPU usage: %.0f%%').cyan,
+            nactive, ratio * 100)
+        if ratio == 0:
+            return
         if self.slots_running > self.max_slots:
             logger.info(
                 ColorFormat(
