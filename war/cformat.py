@@ -31,6 +31,10 @@ class ColorFormat:
         return ColorFormat(self.message, tags=self.tags + [32])
 
     @property
+    def cyan(self):
+        return ColorFormat(self.message, tags=self.tags + [96])
+
+    @property
     def magenta(self):
         return ColorFormat(self.message, tags=self.tags + [35])
 

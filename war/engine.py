@@ -37,6 +37,7 @@ class Engine:
         self.target = None
         self.cv = 3
         self.slots = -1
+        self.cooperate = False
 
     def add(self, strategies):
         """Add strategies to compete."""
@@ -53,10 +54,11 @@ class Engine:
         self.cv = cv
         self.scoring = scoring
 
-    def set_slots(self, slots):
+    def set_slots(self, slots, cooperate=False):
         """Slots should be up to the number of CPU cores."""
         assert slots > 1
         self.slots = slots
+        self.cooperate = cooperate
 
     def start(self):
         """Start engine work in blocking mode."""
@@ -91,7 +93,8 @@ class Engine:
             worker.start()
 
         nfolds = self.cv
-        sched = Scheduler(self.strategies, num_consumers, nfolds)
+        sched = Scheduler(self.strategies, num_consumers, nfolds,
+                          self.cooperate)
 
         # Some strategy may want to define its search space based on
         # the data information, such as the number of features.
@@ -105,6 +108,12 @@ class Engine:
             })
 
         sched.report_results()
+        import psutil
+        proc = psutil.Process()
+        proc.cpu_percent()
+
+        if self.cooperate:
+            logger.info(ColorFormat('Working in cooperative mode').cyan)
 
         keep_running = True
         while keep_running:
@@ -117,43 +126,59 @@ class Engine:
                 task.cv = nfolds
                 task.scoring = self.scoring
                 tasks.put(task)
-            # Collect results for some time.
-            for _ in range(60):
-                if sched.available_slots() > num_consumers // 2:
-                    break
-                # while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-                char = getch()
-                if char == 'r':
-                    sched.report_results()
-                elif char == 'd':
-                    logging.getLogger().setLevel(logging.DEBUG)
-                    logger.info('Changed log level to debug')
-                elif char == 'i':
-                    logging.getLogger().setLevel(logging.INFO)
-                    logger.info('Changed log level to info')
-                elif char in ['q', '\x03']:
-                    keep_running = False
-                    break
-                elif char == 'e':
-                    sched.report_last_error()
-                elif char in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
-                    sched.report_best(int(char))
-                elif char == 'h':
-                    logger.info(ColorFormat('Commands:').bold)
-                    logger.info('1-9 Best results for a strategy.')
-                    logger.info(' d  Set debugging log level.')
-                    logger.info(' e  Show last error information')
-                    logger.info(' h  Show help.')
-                    logger.info(' i  Set information log level.')
-                    logger.info(' q  Quit.')
-                    logger.info(' r  Report scheduler information.')
-                elif char is not None:
-                    logger.warning('Command not recognized: %s', repr(char))
-                if results.empty():
-                    continue
-                if not results.empty():
-                    result = results.get()
-                    sched.collect(result)
+            if sched.available_slots() > num_consumers // 2:
+                break
+            char = getch()
+            if char:
+                import sys
+                sys.stderr.write('\r')
+                sys.stderr.flush()
+            if char == 'r':
+                sched.report_results()
+            elif char == 'm':
+                sched.toggle_cooperate()
+            elif char == 'c':
+                sched.cooperate(force=True)
+            elif char == 's':
+                sched.report_counters()
+            elif char == 'd':
+                logging.getLogger().setLevel(logging.DEBUG)
+                logger.info('Changed log level to debug')
+            elif char == 'i':
+                logging.getLogger().setLevel(logging.INFO)
+                logger.info('Changed log level to info')
+            elif char in ['q', '\x03']:
+                keep_running = False
+                break
+            elif char == 'e':
+                sched.report_last_error()
+            elif char in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                sched.report_best(int(char))
+            elif char == 'u':
+                logger.info('CPU Usage: %s', proc.cpu_percent())
+            elif char == 'h':
+                logger.info(ColorFormat('Commands:').bold)
+                logger.info('1-9 Scheduler information of a strategy.')
+                logger.info(
+                    (' c  Force execution of cooperation procedure '
+                     '(can run outside of cooperation mode).'))
+                logger.info(' d  Set debugging log level.')
+                logger.info(' e  Show last error information.')
+                logger.info(' h  Show help.')
+                logger.info(' i  Set information log level.')
+                logger.info(' m  Toggle cooperation mode.')
+                logger.info(' q  Quit.')
+                logger.info(' r  Report scheduler information.')
+                logger.info(' s  Show scheduler counters.')
+            elif char is not None:
+                logger.warning('Command not recognized: %s', repr(char))
+            if results.empty():
+                continue
+            if not results.empty():
+                result = results.get()
+                sched.collect(result)
+            else:
+                time.sleep(0.1)
 
             if sched.improved_since_last_report:
                 sched.report_results()

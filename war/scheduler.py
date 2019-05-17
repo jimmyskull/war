@@ -1,5 +1,9 @@
 from itertools import product
+from math import ceil
 import logging
+import multiprocessing
+import psutil
+import time
 
 from numpy import array, bincount, ceil, floor, prod, stack
 from numpy.random import choice
@@ -65,9 +69,11 @@ def optimize_task_config(available_slots, max_parallel_tasks,
 
 class Scheduler:
 
-    def __init__(self, strategies, nconsumers, max_threads_per_evaluation):
+    def __init__(self, strategies, nconsumers, max_threads_per_evaluation,
+                 cooperate):
         self.strategies = dict()
         self.nconsumers = nconsumers
+        self.max_slots = nconsumers
         self.max_threads_per_evaluation = max_threads_per_evaluation
         self.slots_running = 0
         self._populate(strategies)
@@ -75,6 +81,17 @@ class Scheduler:
         self.report_at_ntasks = 100
         self.improved_since_last_report = False
         self.last_error = None
+        self._cooperate = cooperate
+        self.proc = psutil.Process()
+        self.cpu_count = multiprocessing.cpu_count()
+        self.last_coop_time = None
+        self.proc_children = list(self.proc.children(recursive=True))
+        self._init_proc()
+
+    def _init_proc(self):
+        self.proc.cpu_percent()
+        for child in self.proc_children:
+            child.cpu_percent()
 
     def _populate(self, strategy_list):
         for strat in strategy_list:
@@ -128,6 +145,27 @@ class Scheduler:
             return
         raise ValueError('Strategy not found not mark task as finished.')
 
+    def report_counters(self):
+        logger = logging.getLogger('war.scheduler')
+        header = '-' * 80
+        logger.info(ColorFormat('Scheduler Counters').bold)
+        logger.info(header)
+        logger.info('Scheduler thread CPU usage : %.f%%',
+            self.proc.cpu_percent())
+        logger.info('CPU count                  : %d', self.cpu_count)
+        logger.info('Number of consumers        : %d', self.nconsumers)
+        logger.info('Max. number of slots       : %d', self.max_slots)
+        logger.info('Max. threads in validation : %d',
+            self.max_threads_per_evaluation)
+        logger.info('Slots running              : %d', self.slots_running)
+        logger.info('Tasks ended in this session: %d',
+            self.tasks_finished)
+        logger.info('Cooperate                  : %s', self._cooperate)
+        logger.info('Cooperation resting        : %ds, since %s',
+            time.time() - self.last_coop_time,
+            time.strftime('%c', time.localtime(self.last_coop_time)))
+        logger.info(header)
+
     def report_last_error(self):
         logger = logging.getLogger('war.scheduler')
         if not self.last_error:
@@ -153,7 +191,7 @@ class Scheduler:
         pp = pprint.PrettyPrinter()
         strategy = list(self.strategies.keys())[idx - 1]
         print(ColorFormat(strategy.name).bold)
-        code = pp.pformat(strategy.cache)
+        code = pp.pformat(self.strategies[strategy])
         fmt = highlight(code, PythonLexer(), TerminalFormatter())
         print(fmt)
 
@@ -244,11 +282,18 @@ class Scheduler:
         logger.info('-' * cols)
 
     def available_slots(self):
-        return self.nconsumers - self.slots_running
+        return max(0, self.max_slots - self.slots_running)
 
     def next(self):
-        assert self.slots_running <= self.nconsumers
+        #assert self.slots_running <= self.nconsumers
         logger = logging.getLogger('war.scheduler')
+
+        if self.last_coop_time is None:
+            self.last_coop_time = time.time()
+
+        if self._cooperate:
+            self.cooperate()
+
         # Estimate available slots (CPU cores to use).
         available_slots = self.available_slots()
         if not available_slots:
@@ -325,6 +370,29 @@ class Scheduler:
                     config['njobs_on_validation'])
         return task_list
 
+    def toggle_cooperate(self):
+        logger = logging.getLogger('war.scheduler')
+        if self._cooperate:
+            self._cooperate = False
+            logger.info(
+                ColorFormat('Cooperation has been disabled.').cyan.bold)
+            if self.max_slots < self.nconsumers:
+                logger.info(
+                    ColorFormat('Increasing slots from %d to %d.').cyan,
+                    self.max_slots, self.nconsumers)
+                self.nconsumers = self.max_slots
+        else:
+            self._cooperate = True
+            logger.info(
+                ColorFormat('Cooperation has been enabled.').cyan.bold)
+            logger.info(
+                ColorFormat('The current number of slots is %d.').cyan,
+                self.max_slots)
+            logger.info(
+                ColorFormat('Collecting information for analysis.').cyan)
+            self.last_coop_time = time.time()
+            self._init_proc()
+
     def _probs(self):
         weights = list()
         min_score = min(max(0, info['best']['agg']['avg'] + strat.weight)
@@ -346,3 +414,46 @@ class Scheduler:
         weights = array(weights) + 1e-6
         probs = weights / sum(weights)
         return probs
+
+    def cooperate(self, force=False):
+        if not force and (time.time() - self.last_coop_time) < 60:
+            return
+        self.last_coop_time = time.time()
+        logger = logging.getLogger('war.scheduler')
+        perc_expected = self.slots_running / self.cpu_count
+        ratios = list()
+        for child in self.proc_children:
+            perc_usage = child.cpu_percent() / 100
+            ratio = perc_usage / (perc_expected + 1e-6)
+            logger.debug(ColorFormat('CPU Usage: %.2f').light_gray,
+                ratio)
+            if ratio > 0:
+                ratios.append(ratio)
+        if not ratios:
+            return
+        ratio = numpy.mean(ratios)
+        logger.info(
+            ColorFormat('Average active worker CPU usage: %.2f').cyan,
+            ratio)
+        if self.slots_running > self.max_slots:
+            logger.info(
+                ColorFormat(
+                    ('There are %d slots running above current limit %d. '
+                     'Waiting them to finish.')).cyan,
+                self.slots_running - self.max_slots, self.max_slots)
+            return
+        if ratio < 0.7 and self.max_slots > max(2, self.nconsumers // 2):
+            max_slots = int(max(ceil(self.max_slots * ratio), 2))
+            logger.warning(
+                ('Average worker CPU usage is at %.0f%%, '
+                 'decreasing slots from %d to %d.'),
+                ratio * 100,
+                self.max_slots, max_slots)
+            self.max_slots = max_slots
+        elif ratio > 0.95 and self.max_slots < self.nconsumers:
+            max_slots = self.max_slots + 1
+            logger.warning(
+                ('It seems we can use more CPU. '
+                 'Increasing slots from %d to %d.'),
+                self.max_slots, max_slots)
+            self.max_slots = max_slots
