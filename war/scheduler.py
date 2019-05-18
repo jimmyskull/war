@@ -488,15 +488,18 @@ class Scheduler:
                      'Waiting them to finish.')).cyan,
                 self.slots_running - self.max_slots, self.max_slots)
             return
-        if ratio < 0.7 and self.max_slots > max(2, self.nconsumers // 2):
+        if ratio < 0.95 and self.max_slots > max(2, self.nconsumers // 2):
             max_slots = int(max(ceil(self.max_slots * ratio), 2))
-            logger.warning(
-                ('Average worker CPU usage is at %.0f%%, '
-                 'decreasing slots from %d to %d.'),
-                ratio * 100,
-                self.max_slots, max_slots)
-            self.max_slots = max_slots
-        elif ratio > 0.95 and self.max_slots < self.nconsumers:
+            if max_slots != self.max_slots:
+                # It's possible the reduction will not happen when
+                # working if few slots.
+                logger.warning(
+                    ('Average worker CPU usage is at %.0f%%, '
+                     'decreasing slots from %d to %d.'),
+                    ratio * 100,
+                    self.max_slots, max_slots)
+                self.max_slots = max_slots
+        elif ratio > 1.10 and self.max_slots < self.nconsumers:
             max_slots = self.max_slots + 1
             logger.warning(
                 ('It seems we can use more CPU. '

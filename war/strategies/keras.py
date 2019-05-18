@@ -93,7 +93,7 @@ class RandomSearchKerasMLP(Strategy):
         max_size = min(10, self._n_features)
         cs.add_hyperparameters([
             CSH.UniformIntegerHyperparameter(
-                'epochs', lower=50, upper=100, default_value=100),
+                'epochs', lower=50, upper=500, default_value=100),
             CSH.CategoricalHyperparameter(
                 'activation_0', choices=['relu']),
             CSH.UniformFloatHyperparameter(
@@ -141,7 +141,7 @@ class RandomSearchKerasPCAMLP(Strategy):
                 lower=1, upper=max_components,
                 default_value=min(2, self._n_features)),
             CSH.UniformIntegerHyperparameter(
-                'epochs', lower=50, upper=100, default_value=100),
+                'epochs', lower=50, upper=300, default_value=100),
             CSH.CategoricalHyperparameter(
                 'activation_0', choices=['relu']),
             CSH.UniformFloatHyperparameter(
