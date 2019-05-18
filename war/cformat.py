@@ -1,6 +1,7 @@
-
+# pylint: disable=C0111
 
 class ColorFormat:
+    """Format a text for linux console-code terminal colors."""
 
     def __init__(self, text='', tags=None):
         self.tags = tags if tags else list()
