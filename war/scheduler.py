@@ -5,7 +5,7 @@ import multiprocessing
 import psutil
 import time
 
-from numpy import array, bincount, ceil, floor, prod, stack
+from numpy import array, argsort, bincount, ceil, floor, prod, stack
 from numpy.random import choice
 import numpy
 from scipy.optimize import minimize
@@ -27,7 +27,7 @@ def sec2time(sec, n_msec=3):
         pattern = r'%02d:%02d:%02d'
     if d == 0:
         return pattern % (h, m, s)
-    return ('%d days, ' + pattern) % (d, h, m, s)
+    return ('%dd, ' + pattern) % (d, h, m, s)
 
 
 def optimize_task_config(available_slots, max_parallel_tasks,
@@ -231,6 +231,85 @@ class Scheduler:
     def report_results(self):
         self.improved_since_last_report = False
         logger = logging.getLogger('war.scheduler')
+
+
+        from war.table import TerminalTable
+
+        table = TerminalTable()
+        table.set_header([
+            'ID', '↓Rank', 'Name', 'Total Time', 'T', 'S', 'Ended',
+            'Best', '95% CI', 'Min', 'Max', 'Prob', 'Weight'
+        ])
+
+        def _count(x):
+            return f'{x:,d}'
+
+        def _score(x):
+            if x < 0:
+                return f'{x:.3f}'
+            return f'{x:.4f}'
+
+        def _weight(x):
+            if x < 0:
+                return f'{x:.1f}'
+            return f'{x:.2f}'
+
+        scores = [info['best']['agg']['avg']
+                  for info in self.strategies.values()]
+        rank_score = argsort(-array(scores))
+        sorted_scores = sorted(scores)
+
+        total_time = sum([info['cumulative_time']
+                          for info in self.strategies.values()]) + 1e-4
+        probs = self._probs()
+
+        from war.table import Cell
+
+        rows = list()
+
+        for idx, (strat, info) in enumerate(self.strategies.items(), 1):
+            agg = info['best']['agg']
+            to_ci = 2.0 / (numpy.sqrt(len(info['best']['scores'])) + 1e-4)
+            attr = None
+            if agg['avg'] == sorted_scores[-1]:
+                attr = ['bold', 'blue']
+            rank = numpy.where(rank_score == idx - 1)[0][0] + 1
+            rows.append(
+                (rank,
+                 [
+                    str(idx),
+                    str(rank),
+                    Cell(strat.name, attr=['ljust']),
+                    Cell(('{} ({:5.1%})'.format(
+                          sec2time(info['cumulative_time'], 0),
+                          info['cumulative_time'] / total_time)),
+                         attr=['rjust']
+                     ),
+                    _count(info['running']),
+                    _count(info['slots']),
+                    _count(info['finished']),
+                    _score(agg['avg']),
+                    _score(agg['std'] * to_ci),
+                    _score(agg['min']),
+                    _score(agg['max']),
+                    f'{probs[idx - 1]:.0%}',
+                    _weight(strat.weight),
+                 ],
+                 attr)
+            )
+
+        rows = sorted(rows, key=lambda x: x[0])
+        for row in rows:
+            table.add_row(row[1], attr=row[2])
+
+        # import sys
+        # sys.stderr.write('\033c\033[3J')
+        # sys.stderr.flush()
+        for table_row in table.format().split('\n'):
+            logger.info(table_row)
+
+        return
+
         # We need to compute the length of the largest name.
         name_len = max([len(strat.name) for strat in self.strategies])
         # Total time used.
@@ -428,21 +507,23 @@ class Scheduler:
 
     def _probs(self):
         weights = list()
-        min_score = min(max(0, info['best']['agg']['avg'] + strat.weight)
-                        for strat, info in self.strategies.items())
-        max_score = max(max(1, info['best']['agg']['avg'] + strat.weight)
-                        for strat, info in self.strategies.items())
+        min_score = min(max(0, info['best']['agg']['avg'] * strat.weight)
+                        for strat, info in self.strategies.items()
+                        if not info['exhausted'])
+        max_score = max(max(1, info['best']['agg']['avg'] * strat.weight)
+                        for strat, info in self.strategies.items()
+                        if not info['exhausted'])
         for strat, info in self.strategies.items():
             max_tasks = strat.max_tasks
             exhausted, finished = info['exhausted'], info['finished']
             if not (max_tasks == -1 or max_tasks > finished) or exhausted:
                 weights.append(0)
                 continue
-            best_avg_score = info['best']['agg']['avg']
+            best_avg_score = info['best']['agg']['avg'] * strat.weight
             best_score = min(1, max(0, best_avg_score))
             norm_score = (best_score - min_score) / (max_score - min_score)
             warm_up = 2 * (strat.warm_up - info['finished'])
-            weight = max(0, max(norm_score + strat.weight, warm_up))
+            weight = max(0, max(norm_score + 1e-6, warm_up))
             weights.append(weight)
         weights = array(weights) + 1e-6
         probs = weights / sum(weights)

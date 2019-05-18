@@ -9,7 +9,7 @@ class Strategy:
 
     def __init__(self, name=None, max_parallel_tasks=1,
                  max_threads_per_estimator=1, max_tasks=-1,
-                 weight=0.01, warm_up=20):
+                 weight=1.0, warm_up=20):
         self.name = name if name else self.__class__.__name__
         self.max_parallel_tasks = max_parallel_tasks
         self.max_threads_per_estimator = max_threads_per_estimator
