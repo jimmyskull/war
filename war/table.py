@@ -1,3 +1,4 @@
+"""Terminal table."""
 from war.cformat import ColorFormat
 
 
@@ -21,6 +22,16 @@ UNICODE_BOX_DRAWING = {
 
 
 class Cell:
+    """
+    Table cell.
+
+    Parameters
+    ----------
+    value : object
+        An object convertible to string.
+    attr: list of str, optional, default: depends on value type
+        Default is ['ljust'] for flot, ['rjust'] otherwise.
+    """
 
     def __init__(self, value, attr=None):
         self.value = value
@@ -35,6 +46,7 @@ class Cell:
 
     @property
     def attr(self):
+        """List of attributes."""
         return self._attr
 
     @attr.setter
@@ -54,6 +66,14 @@ class Cell:
                 self._attr += ['rjust']
 
     def format(self, length=0):
+        """
+        Return the string formatted to be inserted into the table.
+
+        Return
+        ------
+        length : int
+            The length of the cell.
+        """
         if isinstance(self.attr, list):
             fmt = ColorFormat(self.value)
             for attr in self.attr:
@@ -68,6 +88,7 @@ class Cell:
 
 
 class TerminalTable:
+    """Print a terminal table."""
 
     def __init__(self, table_symbol=None):
         if table_symbol is None:
@@ -76,39 +97,6 @@ class TerminalTable:
         self.rows = list()
         self.col_lens = list()
         self.table_symbol = table_symbol
-
-    def set_header(self, columns):
-        self.header = [Cell(col, attr=['bold']) for col in columns]
-
-    def add_row(self, values, attr=None):
-        if not self.header:
-            raise ValueError('Set up header first.')
-        if len(values) != len(self.header):
-            raise ValueError(
-                'Received {} values in row for {} columns.'.format(
-                    len(values), len(self.header)))
-        if not attr:
-            attr = list()
-        row = list()
-        for val in values:
-            if isinstance(val, Cell):
-                val.attr += attr
-                row.append(val)
-            else:
-                row.append(Cell(val, attr=attr))
-        self.rows.append(row)
-
-    def format(self):
-        self._compute_lengths()
-        output = list()
-        output.append(self._get_box('up_left', 'up_div', 'up_right'))
-        output.append(self._get_row(self.header))
-        output.append(
-            self._get_box('middle_left', 'middle_div', 'middle_right'))
-        for row in self.rows:
-            output.append(self._get_row(row))
-        output.append(self._get_box('down_left', 'down_div', 'down_right'))
-        return '\n'.join(output)
 
     def _get_row(self, row):
         buf = list()
@@ -132,3 +120,51 @@ class TerminalTable:
             for j, cell in enumerate(row):
                 lens[j] = max(lens[j], len(cell.value))
         self.col_lens = lens
+
+    def set_header(self, columns):
+        """Set table header."""
+        self.header = [Cell(col, attr=['bold']) for col in columns]
+
+    def add_row(self, values, attr=None):
+        """
+        Append a row into the table.
+
+        Add attr to each cell's attr of the row.
+
+        Parameters
+        ----------
+        values : list of str and cell
+            Column values for the row.  Can be a mix of string and
+            Cell values.
+        attr : list of str
+            Attributes to be appended to the cells' attributes.
+        """
+        if not self.header:
+            raise ValueError('Set up header first.')
+        if len(values) != len(self.header):
+            raise ValueError(
+                'Received {} values in row for {} columns.'.format(
+                    len(values), len(self.header)))
+        if not attr:
+            attr = list()
+        row = list()
+        for val in values:
+            if isinstance(val, Cell):
+                val.attr += attr
+                row.append(val)
+            else:
+                row.append(Cell(val, attr=attr))
+        self.rows.append(row)
+
+    def format(self):
+        """Return string with the formatted table."""
+        self._compute_lengths()
+        output = list()
+        output.append(self._get_box('up_left', 'up_div', 'up_right'))
+        output.append(self._get_row(self.header))
+        output.append(
+            self._get_box('middle_left', 'middle_div', 'middle_right'))
+        for row in self.rows:
+            output.append(self._get_row(row))
+        output.append(self._get_box('down_left', 'down_div', 'down_right'))
+        return '\n'.join(output)
