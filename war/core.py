@@ -7,6 +7,11 @@ from war.task import Task
 
 
 class Strategy:
+    """
+    Base strategy.
+
+    War works with several simulteaneous strategies.
+    """
 
     def __init__(self, name=None, max_parallel_tasks=1,
                  max_threads_per_estimator=1, max_tasks=-1,

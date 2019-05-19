@@ -1,4 +1,6 @@
+"""Format text with linux terminal console-codes."""
 # pylint: disable=C0111
+
 
 class ColorFormat:
     """Format a text for linux console-code terminal colors."""

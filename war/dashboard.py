@@ -10,6 +10,7 @@ from war.table import Table, Cell, NO_BOX_DRAWING
 
 
 class Dashboard:
+    """Dashboard is the terminal UI Controller."""
 
     def __init__(self, engine, scheduler):
         self.logger = logging.getLogger('war.dashboard')

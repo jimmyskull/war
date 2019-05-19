@@ -3,6 +3,8 @@ import multiprocessing
 import psutil
 import time
 
+from sklearn.metrics import get_scorer
+
 from war.cformat import ColorFormat
 from war.dashboard import Dashboard
 from war.scheduler import Scheduler
@@ -34,7 +36,7 @@ class Engine:
     def set_cv(self, cv, scoring='roc_auc'):
         """CV configuration."""
         self.cv = cv
-        self.scoring = scoring
+        self.scoring = get_scorer(scoring)
 
     def set_slots(self, slots, cooperate=False):
         """Slots should be up to the number of CPU cores."""
