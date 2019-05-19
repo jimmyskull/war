@@ -19,7 +19,7 @@ class Engine:
         self.target = None
         self.cv = 3
         self.slots = -1
-        self.cooperate = False
+        self.cooperate = True
         self.proc = psutil.Process()
         self.proc.cpu_percent()
 
@@ -38,7 +38,7 @@ class Engine:
         self.cv = cv
         self.scoring = get_scorer(scoring)
 
-    def set_slots(self, slots, cooperate=False):
+    def set_slots(self, slots, cooperate=True):
         """Slots should be up to the number of CPU cores."""
         assert slots > 1
         self.slots = slots
@@ -120,9 +120,6 @@ class Engine:
                 logger.debug(CF('New result %s').dark_gray,
                              result.task.full_id())
                 sched.collect(result)
-
-            if sched.improved_since_last_report:
-                sched.report_results()
 
         for worker in consumers:
             worker.terminate()

@@ -52,7 +52,7 @@ class LazyKerasBuild(BaseEstimator, ClassifierMixin):
         tf.logging.set_verbosity(tf.logging.ERROR)
         config = tf.ConfigProto(
             log_device_placement=False,
-            intra_op_parallelism_threads=n_threads,
+            intra_op_parallelism_threads=n_threads - 1,
             inter_op_parallelism_threads=1,
             allow_soft_placement=True,
             device_count={'CPU': n_threads}
@@ -77,9 +77,8 @@ class LazyKerasBuild(BaseEstimator, ClassifierMixin):
 class RandomSearchKerasMLP(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS Keras MLP',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=-1)
+        # Keras requires at least two slots due to the Tensorflow backend.
+        super().__init__(name='RS Keras MLP', parallel_fit_bounds=(2, -1))
         self._n_features = None
         self._cs = None
 
@@ -110,7 +109,7 @@ class RandomSearchKerasMLP(Strategy):
         self._cs = cs
 
     def next(self, nthreads):
-        assert nthreads == 1
+        assert nthreads >= 2
         params = dict(**self._cs.sample_configuration())
         params['n_features'] = self._n_features
         params['n_threads'] = nthreads
@@ -122,8 +121,7 @@ class RandomSearchKerasPCAMLP(Strategy):
 
     def __init__(self):
         super().__init__(name='RS Keras PCA + MLP',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=-1)
+                         parallel_fit_bounds=(2, -1))
         self._n_features = None
         self._cs = None
 
@@ -158,6 +156,7 @@ class RandomSearchKerasPCAMLP(Strategy):
         self._cs = cs
 
     def next(self, nthreads):
+        assert nthreads >= 2
         from sklearn.decomposition import PCA
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import Imputer

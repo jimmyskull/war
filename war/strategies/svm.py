@@ -5,8 +5,7 @@ class RandomSearchPCASVMLinear(Strategy):
 
     def __init__(self):
         super().__init__(name='RS PCA + SVM Linear',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=1    )
+                         parallel_fit_bounds=(1, 1))
 
     def init(self, info):
         nfeatures = info['features'].shape[1]

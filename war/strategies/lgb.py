@@ -22,9 +22,7 @@ class LGBMModel(BaseEstimator, ClassifierMixin):
 class RandomSearchLGBM(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS LightGBM',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=-1)
+        super().__init__(name='RS LightGBM')
         self._cs = None
 
     def init(self, info):

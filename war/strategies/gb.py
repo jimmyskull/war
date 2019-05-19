@@ -5,8 +5,7 @@ class RandomSearchGradientBoosting(Strategy):
 
     def __init__(self):
         super().__init__(name='RS Gradient Boosting',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=1)
+                         parallel_fit_bounds=(1, 1))
         # pylint: disable=I1101
         import ConfigSpace as CS
         import ConfigSpace.hyperparameters as CSH

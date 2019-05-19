@@ -2,8 +2,13 @@
 # pylint: disable=C0111
 from collections import OrderedDict
 import logging
+import pprint
 import sys
 import time
+
+from pygments import highlight
+from pygments.formatters import TerminalFormatter  # pylint: disable=E0611
+from pygments.lexers import PythonLexer            # pylint: disable=E0611
 
 from war.cformat import ColorFormat as CF
 from war.input import getch, input_int, input_float, input_from_list
@@ -23,12 +28,12 @@ class Dashboard:
         self.handlers = OrderedDict(
             s=(self.status, 'Show the status table.'),
             S=(self.sort_status, 'Set sorting column of the status table.'),
+            b=(self.show_strategy, 'Show strategy info and the best candidate.'),
             T=(self.set_table_theme, 'Set theme for tables.'),
             e=(self.show_error, 'Show last task error information.'),
             C=(self.toggle_cooperate, 'Toggle cooperation mode.'),
-            c=(self.cooperate, 'Force execution of cooperation procedure.'),
+            c=(self.cooperate, 'Run the cooperation procedure.'),
             L=(self.toggle_log_level, 'Toggle logging level.'),
-            p=(self.show_strategy, 'Show strategy information.'),
             w=(self.set_weight, 'Set weight of a strategy.'),
             m=(self.set_max_slots, 'Set maximum slots.'),
             u=(self.resource_usage, 'Show resource usage.'),
@@ -52,7 +57,14 @@ class Dashboard:
             self.logger.warning('Command not recognized: %s', repr(char))
 
     def toggle_cooperate(self):
-        self.scheduler.toggle_cooperate()
+        if self.scheduler.cooperation_mode:
+            self.scheduler.cooperation_mode = False
+            self.logger.info(CF('Cooperation has been disabled.').cyan.bold)
+        else:
+            self.scheduler.cooperation_mode = True
+            msg = (str(CF('Cooperation has been enabled:').cyan.bold)
+                   + str(CF(' the current number of slots is %d.').cyan))
+            self.logger.info(msg, self.scheduler.max_slots)
 
     def cooperate(self):
         self.scheduler.cooperate(force=True)
@@ -103,13 +115,19 @@ class Dashboard:
         print('\t' + message)
 
     def show_strategy(self):
-        bounds = (1, len(self.engine.strategies))
-        msg = 'Select a strategy by ID (1-{}): '.format(bounds[1])
+        strategies = self.engine.strategies
+        names = [strat.name for strat in strategies]
         try:
-            st_id = input_int(msg, bounds=bounds)
-            self.scheduler.report_best(st_id)
-        except ValueError as err:
-            self.logger.error('Could not get strategy: %s', err)
+            stid = input_from_list(names, 'Strategies')
+        except ValueError:
+            pass
+        else:
+            pp = pprint.PrettyPrinter()
+            strategy = strategies[stid - 1]
+            print(CF(strategy.name).bold)
+            code = pp.pformat(self.scheduler.strategies[strategy])
+            fmt = highlight(code, PythonLexer(), TerminalFormatter())
+            print(fmt)
 
     def show_counters(self):
         sched = self.scheduler
@@ -120,7 +138,7 @@ class Dashboard:
         table.add_row(['CPU count', str(sched.cpu_count)])
         table.add_row(['Workers', str(sched.nconsumers)])
         table.add_row(['Maximum slots for validation',
-                       str(sched.max_threads_per_evaluation)])
+                       str(sched.max_slots_per_evaluation)])
         table.add_row(['Maximum slots', str(sched.max_slots)])
         table.add_row(['Running slots', str(sched.slots_running)])
         table.add_row(['Tasks ended in this session',

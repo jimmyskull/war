@@ -6,9 +6,7 @@ from war.core import Strategy
 class RandomSearchXGB(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS XGBoost',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=-1)
+        super().__init__(name='RS XGBoost')
         self._cs = None
 
     def init(self, info):

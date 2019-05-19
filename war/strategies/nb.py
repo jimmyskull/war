@@ -4,10 +4,9 @@ from war.core import Strategy
 class NaiveBayes(Strategy):
 
     def __init__(self):
-        super().__init__(name='Naive Bayes',
-                         max_parallel_tasks=1,
-                         max_threads_per_estimator=1,
-                         max_tasks=1)
+        super().__init__(name='Naive Bayes', warm_up=100,
+                         parallel_tasks_bounds=(1, 1),
+                         parallel_fit_bounds=(1, 1), max_tasks=1)
 
     def next(self, nthreads):
         from sklearn.naive_bayes import GaussianNB
@@ -23,14 +22,13 @@ class NaiveBayes(Strategy):
 class PCANaiveBayes(Strategy):
 
     def __init__(self):
-        super().__init__(name='PCA + Naive Bayes',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=1)
+        super().__init__(name='PCA + Naive Bayes', warm_up=100,
+                         parallel_fit_bounds=(1, 1))
         self.nfeatures = None
         self.curr = None
 
     def init(self, info):
-        self.nfeatures = info['features'].shape[1]
+        self.nfeatures = max(1, info['features'].shape[1] - 1)
         self.curr = 1
 
     def next(self, nthreads):

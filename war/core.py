@@ -13,12 +13,12 @@ class Strategy:
     War works with several simulteaneous strategies.
     """
 
-    def __init__(self, name=None, max_parallel_tasks=1,
-                 max_threads_per_estimator=1, max_tasks=-1,
+    def __init__(self, name=None, parallel_tasks_bounds=(1, -1),
+                 parallel_fit_bounds=(1, -1), max_tasks=-1,
                  weight=1.0, warm_up=20):
         self.name = name if name else self.__class__.__name__
-        self.max_parallel_tasks = max_parallel_tasks
-        self.max_threads_per_estimator = max_threads_per_estimator
+        self.parallel_tasks_bounds = parallel_tasks_bounds
+        self.parallel_fit_bounds = parallel_fit_bounds
         self.max_tasks = max_tasks
         # Additional weight for probability scheduling.
         # May be positive and negative.
@@ -36,6 +36,19 @@ class Strategy:
             'finished': 0,
         }
         self.load_cache()
+
+    def get_tasks_bounds(self, nconsumers):
+        bounds = self.parallel_tasks_bounds
+        if bounds[1] > 0:
+            return bounds
+        return (bounds[0], nconsumers - (bounds[1] + 1))
+
+    def get_fit_bounds(self, nconsumers):
+        bounds = self.parallel_fit_bounds
+        if bounds[1] > 0:
+            return bounds
+        assert bounds[1] != 0, 'Upper bounds must be positive or negative.'
+        return (bounds[0], nconsumers - (bounds[1] + 1))
 
     def load_cache(self):
         logger = logging.getLogger('war.strategy')

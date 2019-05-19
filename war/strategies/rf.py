@@ -4,9 +4,7 @@ from war.core import Strategy
 class RandomSearchRandomForest(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS Random Forest',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=-1)
+        super().__init__(name='RS Random Forest')
         # pylint: disable=I1101
         import ConfigSpace as CS
         import ConfigSpace.hyperparameters as CSH

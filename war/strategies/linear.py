@@ -4,9 +4,8 @@ from war.core import Strategy
 class RandomSearchLogisticRegressionL2(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS LR L2',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=1)
+        super().__init__(name='RS LR L2', warm_up=100,
+                         parallel_fit_bounds=(1, 1))
         # pylint: disable=I1101
         import ConfigSpace as CS
         import ConfigSpace.hyperparameters as CSH
@@ -33,9 +32,8 @@ class RandomSearchLogisticRegressionL2(Strategy):
 class RandomSearchLogisticRegressionL1(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS LR L1',
-                         max_parallel_tasks=-1,
-                         max_threads_per_estimator=1)
+        # L1 is normally slower, do not change it's warmup.
+        super().__init__(name='RS LR L1', parallel_fit_bounds=(1, 1))
         # pylint: disable=I1101
         import ConfigSpace as CS
         import ConfigSpace.hyperparameters as CSH
