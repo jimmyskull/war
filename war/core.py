@@ -1,8 +1,9 @@
+"""Core classes."""
 import logging
 
+from war.cformat import ColorFormat
 from war.database import Database
 from war.task import Task
-from war.cformat import ColorFormat
 
 
 class Strategy:

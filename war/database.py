@@ -68,6 +68,9 @@ class Database:
         files = []
         for root, unused_dirs, files in os.walk(self.db_path):
             for file in files:
+                if file.startswith('obj_'):
+                    # Skip temporary files.
+                    continue
                 oid = os.path.basename(root) + file
                 yield (oid, self.load(oid))
 
@@ -109,7 +112,7 @@ class Database:
 
     def store(self, oid, obj):
         """
-        Return an object from the database.
+        Store an object in the database.
 
         Parameters
         ----------
