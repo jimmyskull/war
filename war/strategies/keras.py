@@ -4,6 +4,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 
 from war.core import Strategy
 
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
@@ -54,12 +55,10 @@ class LazyKerasBuild(BaseEstimator, ClassifierMixin):
             intra_op_parallelism_threads=n_threads,
             inter_op_parallelism_threads=1,
             allow_soft_placement=True,
-            device_count = {'CPU': n_threads}
+            device_count={'CPU': n_threads}
         )
-
         session = tf.Session(config=config)
         K.set_session(session)
-
 
         # Build wrapper
         self._model = make_pipeline(

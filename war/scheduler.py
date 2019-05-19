@@ -86,6 +86,10 @@ class Scheduler:
                 'exhausted': False
             }
 
+    @property
+    def cooperation_mode(self):
+        return self._cooperate
+
     def set_max_slots(self, value):
         if self.max_slots == value:
             return
@@ -100,11 +104,9 @@ class Scheduler:
             curr, self.max_slots)
         excess = self.slots_running - self.max_slots
         if excess > 0:
-            logger.info(
-                CF(
-                    'There are %d slots above the current limit. '
-                    'Waiting for end of normal execution.').yellow,
-                excess )
+            logger.info(CF('There are %d slots above the current limit. '
+                           'Waiting for end of normal execution.').yellow,
+                        excess)
 
     def collect(self, result):
         logger = logging.getLogger('war.scheduler')
@@ -140,45 +142,9 @@ class Scheduler:
                     'scores': result.scores,
                 }
                 self.improved_since_last_report = True
-            if self.tasks_finished % self.report_at_ntasks == 0:
-                self.report_results()
             assert self.strategies[strat]['running'] >= 0
             return
         raise ValueError('Strategy not found not mark task as finished.')
-
-    def report_counters(self):
-        logger = logging.getLogger('war.scheduler')
-        header = '-' * 80
-        logger.info(CF('Scheduler Counters').bold)
-        logger.info(header)
-        logger.info('Scheduler thread CPU usage : %.f%%',
-            self.proc.cpu_percent())
-        logger.info('CPU count                  : %d', self.cpu_count)
-        logger.info('Number of consumers        : %d', self.nconsumers)
-        logger.info('Max. number of slots       : %d', self.max_slots)
-        logger.info('Max. threads in validation : %d',
-            self.max_threads_per_evaluation)
-        logger.info('Slots running              : %d', self.slots_running)
-        logger.info('Tasks ended in this session: %d',
-            self.tasks_finished)
-        logger.info('Cooperate                  : %s', self._cooperate)
-        logger.info('Cooperation resting        : %ds, since %s',
-            time.time() - self.last_coop_time,
-            time.strftime('%c', time.localtime(self.last_coop_time)))
-        logger.info(header)
-
-    def report_last_error(self):
-        logger = logging.getLogger('war.scheduler')
-        if not self.last_error:
-            logger.info('No error occurred during this session.')
-            return
-        message = self.last_error.error_info['message']
-        traceback_msg = self.last_error.error_info['traceback']
-        print('\n')
-        print(str(CF('Traceback:').bold))
-        print(traceback_msg)
-        print(str(CF('Message:').bold))
-        print('\t' + message)
 
     def strategy_by_id(self, idx):
         return list(self.strategies.keys())[idx - 1]
@@ -302,17 +268,13 @@ class Scheduler:
         logger = logging.getLogger('war.scheduler')
         if self._cooperate:
             self._cooperate = False
-            logger.info(
-                CF('Cooperation has been disabled.').cyan.bold)
+            logger.info(CF('Cooperation has been disabled.').cyan.bold)
         else:
             self._cooperate = True
-            logger.info(
-                CF('Cooperation has been enabled.').cyan.bold)
-            logger.info(
-                CF('The current number of slots is %d.').cyan,
-                self.max_slots)
-            logger.info(
-                CF('Collecting information for analysis.').cyan)
+            logger.info(CF('Cooperation has been enabled.').cyan.bold)
+            logger.info(CF('The current number of slots is %d.').cyan,
+                        self.max_slots)
+            logger.info(CF('Collecting information for analysis.').cyan)
             self.last_coop_time = time.time()
             self._init_proc()
 

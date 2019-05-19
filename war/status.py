@@ -6,8 +6,7 @@ import numpy
 from war.format import (format_count, format_probability, format_score,
                         format_weight, sec2time)
 from war.input import input_from_list
-from war.table import (Table, Cell, ASCII_BOX_DRAWING, NO_BOX_DRAWING,
-                       UNICODE_BOX_DRAWING, BAR_BOX_DRAWING)
+from war.table import Table, Cell
 
 
 class StatusTable:
@@ -18,7 +17,6 @@ class StatusTable:
         self.engine = engine
         self.scheduler = scheduler
         self.sort_column = 6
-        self.table_style = UNICODE_BOX_DRAWING
         self.sort_order = 'descending'
         self._header = ['ID', 'Name', 'Total Time', 'T', 'S', 'Ended',
                         'Best', '95% CI', 'Min', 'Max', 'Prob', 'Weight']
@@ -53,9 +51,9 @@ class StatusTable:
         best_score = max(scores)
         return (best_score, total_time, rows)
 
-    def report(self):
+    def report(self, table_style):
         """Report the status table."""
-        table = Table(self.table_style)
+        table = Table(table_style)
         table.set_header(self._get_header())
         best_score, total_time, rows = self._table_data()
         for row in rows:
@@ -77,7 +75,7 @@ class StatusTable:
             ]
             attr = ['bold', 'blue'] if row[6] == best_score else None
             table.add_row(formatted_row, attr)
-        for table_row in table.format().split('\n'):
+        for table_row in table.format():
             self.logger.info(table_row)
         # sched.report_counters()
 
@@ -91,19 +89,4 @@ class StatusTable:
         else:
             self.sort_column = value - 1
             self.sort_order = sorting_order[order - 1]
-            self.report()
-
-    def set_status_theme(self):
-        themes = {
-            'ASCII box': ASCII_BOX_DRAWING,
-            'Bar box': BAR_BOX_DRAWING,
-            'Unicode box': UNICODE_BOX_DRAWING,
-            'No box': NO_BOX_DRAWING,
-        }
-        try:
-            value = input_from_list(themes.keys(), 'Themes for status table')
-        except ValueError:
-            self.logger.info('Theme has not been changed.')
-        else:
-            self.table_style = list(themes.values())[value - 1]
             self.report()

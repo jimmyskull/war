@@ -151,7 +151,7 @@ class Table:
         if table_symbol is None:
             table_symbol = UNICODE_BOX_DRAWING
         self.header = list()
-        self.rows = list()
+        self._rows = list()
         self.col_lens = list()
         self.table_symbol = table_symbol
 
@@ -173,7 +173,7 @@ class Table:
 
     def _compute_lengths(self):
         lens = [len(col.value) for col in self.header]
-        for row in self.rows:
+        for row in self._rows:
             for j, cell in enumerate(row):
                 lens[j] = max(lens[j], len(cell.value))
         self.col_lens = lens
@@ -211,7 +211,7 @@ class Table:
                 row.append(val)
             else:
                 row.append(Cell(val, attr=attr))
-        self.rows.append(row)
+        self._rows.append(row)
 
     def format(self):
         """Return string with the formatted table."""
@@ -221,9 +221,9 @@ class Table:
         output.append(self._get_row(self.header))
         output.append(
             self._get_box('middle_left', 'middle_div', 'middle_right'))
-        for row in self.rows:
+        for row in self._rows:
             output.append(self._get_row(row))
         output.append(self._get_box('down_left', 'down_div', 'down_right'))
         # Remove empty lines, in case of no box drawing.
         output = [line for line in output if line.strip()]
-        return '\n'.join(output)
+        return output
