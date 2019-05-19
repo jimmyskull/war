@@ -21,6 +21,44 @@ UNICODE_BOX_DRAWING = {
 }
 
 
+ASCII_BOX_DRAWING = {
+    # Separator
+    'horz_sep': '-',
+    'vert_sep': '|',
+    # Up
+    'up_left': '+',
+    'up_right': '+',
+    'up_div': '+',
+    # Down
+    'down_left': '+',
+    'down_right': '+',
+    'down_div': '+',
+    # Middle
+    'middle_left': '+',
+    'middle_right': '+',
+    'middle_div': '+',
+}
+
+
+BAR_BOX_DRAWING = {
+    # Separator
+    'horz_sep': '=',
+    'vert_sep': ' ',
+    # Up
+    'up_left': '=',
+    'up_right': '=',
+    'up_div': '=',
+    # Down
+    'down_left': '=',
+    'down_right': '=',
+    'down_div': '=',
+    # Middle
+    'middle_left': '=',
+    'middle_right': '=',
+    'middle_div': '=',
+}
+
+
 NO_BOX_DRAWING = {
     # Separator
     'horz_sep': '',

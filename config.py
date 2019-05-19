@@ -15,8 +15,8 @@ logging.getLogger().setLevel(logging.INFO)
 STRATEGIES = [
     war.strategies.ada.RandomSearchAdaBoost(),
     war.strategies.gb.RandomSearchGradientBoosting(),
-    war.strategies.keras.RandomSearchKerasMLP(),
-    war.strategies.keras.RandomSearchKerasPCAMLP(),
+    #war.strategies.keras.RandomSearchKerasMLP(),
+    #war.strategies.keras.RandomSearchKerasPCAMLP(),
     war.strategies.lda.LDA(),
     war.strategies.lda.PCALDA(),
     war.strategies.lgb.RandomSearchLGBM(),

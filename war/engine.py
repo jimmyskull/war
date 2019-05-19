@@ -65,6 +65,8 @@ class Engine:
             num_consumers = self.slots
         assert num_consumers > 0
 
+        self.num_consumers = num_consumers
+
         # Establish communication queues
         tasks = multiprocessing.JoinableQueue()
         results = multiprocessing.Queue()
@@ -90,8 +92,6 @@ class Engine:
                 'target': self.target,
                 'cv': self.cv,
             })
-
-        sched.report_results()
 
         if self.cooperate:
             logger.info(CF('Working in cooperative mode').cyan)

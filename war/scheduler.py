@@ -9,24 +9,7 @@ from numpy.random import choice
 import numpy
 from scipy.optimize import minimize
 
-from war.cformat import ColorFormat
-
-
-def sec2time(sec, n_msec=3):
-    """Convert seconds to 'Dd, HH:MM:SS.FFF'."""
-    # pylint: disable=C0103
-    if hasattr(sec, '__len__'):
-        return [sec2time(s) for s in sec]
-    m, s = divmod(sec, 60)
-    h, m = divmod(m, 60)
-    d, h = divmod(h, 24)
-    if n_msec > 0:
-        pattern = '%%02d:%%02d:%%0%d.%df' % (n_msec + 3, n_msec)
-    else:
-        pattern = r'%02d:%02d:%02d'
-    if d == 0:
-        return pattern % (h, m, s)
-    return ('%dd, ' + pattern) % (d, h, m, s)
+from war.cformat import ColorFormat as CF
 
 
 def optimize_task_config(available_slots, max_parallel_tasks,
@@ -113,12 +96,12 @@ class Scheduler:
         self.max_slots = value
         logger = logging.getLogger('war.scheduler')
         logger.info(
-            ColorFormat('Changed number of slots from %d to %d').yellow,
+            CF('Changed number of slots from %d to %d').yellow,
             curr, self.max_slots)
         excess = self.slots_running - self.max_slots
         if excess > 0:
             logger.info(
-                ColorFormat(
+                CF(
                     'There are %d slots above the current limit. '
                     'Waiting for end of normal execution.').yellow,
                 excess )
@@ -146,8 +129,8 @@ class Scheduler:
             score = result.agg['avg']
             if self.strategies[strat]['best']['agg']['avg'] < score:
                 logger.info(
-                    (str(ColorFormat('%s').bold.green) +
-                     str(ColorFormat(' improvement: %.4f -> %.4f').green)),
+                    (str(CF('%s').bold.green) +
+                     str(CF(' improvement: %.4f -> %.4f').green)),
                     strat.name,
                     self.strategies[strat]['best']['agg']['avg'],
                     score
@@ -166,7 +149,7 @@ class Scheduler:
     def report_counters(self):
         logger = logging.getLogger('war.scheduler')
         header = '-' * 80
-        logger.info(ColorFormat('Scheduler Counters').bold)
+        logger.info(CF('Scheduler Counters').bold)
         logger.info(header)
         logger.info('Scheduler thread CPU usage : %.f%%',
             self.proc.cpu_percent())
@@ -192,9 +175,9 @@ class Scheduler:
         message = self.last_error.error_info['message']
         traceback_msg = self.last_error.error_info['traceback']
         print('\n')
-        print(str(ColorFormat('Traceback:').bold))
+        print(str(CF('Traceback:').bold))
         print(traceback_msg)
-        print(str(ColorFormat('Message:').bold))
+        print(str(CF('Message:').bold))
         print('\t' + message)
 
     def strategy_by_id(self, idx):
@@ -221,90 +204,10 @@ class Scheduler:
         from pygments.lexers import PythonLexer
         pp = pprint.PrettyPrinter()
         strategy = self.strategy_by_id(idx)
-        print(ColorFormat(strategy.name).bold)
+        print(CF(strategy.name).bold)
         code = pp.pformat(self.strategies[strategy])
         fmt = highlight(code, PythonLexer(), TerminalFormatter())
         print(fmt)
-
-    def report_results(self):
-        self.improved_since_last_report = False
-        logger = logging.getLogger('war.scheduler')
-
-
-        from war.table import Table
-
-        table = Table()
-        table.set_header([
-            'ID', '↓Rank', 'Name', 'Total Time', 'T', 'S', 'Ended',
-            'Best', '95% CI', 'Min', 'Max', 'Prob', 'Weight'
-        ])
-
-        def _count(x):
-            return f'{x:,d}'
-
-        def _score(x):
-            if x < 0:
-                return f'{x:.3f}'
-            return f'{x:.4f}'
-
-        def _weight(x):
-            if x < 0:
-                return f'{x:.1f}'
-            return f'{x:.2f}'
-
-        scores = [info['best']['agg']['avg']
-                  for info in self.strategies.values()]
-        rank_score = argsort(-array(scores))
-        sorted_scores = sorted(scores)
-
-        total_time = sum([info['cumulative_time']
-                          for info in self.strategies.values()]) + 1e-4
-        probs = self._probs()
-
-        from war.table import Cell
-
-        rows = list()
-
-        for idx, (strat, info) in enumerate(self.strategies.items(), 1):
-            agg = info['best']['agg']
-            to_ci = 2.0 / (numpy.sqrt(len(info['best']['scores'])) + 1e-4)
-            attr = None
-            if agg['avg'] == sorted_scores[-1]:
-                attr = ['bold', 'blue']
-            rank = numpy.where(rank_score == idx - 1)[0][0] + 1
-            rows.append(
-                (rank,
-                 [
-                    str(idx),
-                    str(rank),
-                    Cell(strat.name, attr=['ljust']),
-                    Cell(('{} ({:5.1%})'.format(
-                          sec2time(info['cumulative_time'], 0),
-                          info['cumulative_time'] / total_time)),
-                         attr=['rjust']
-                     ),
-                    _count(info['running']),
-                    _count(info['slots']),
-                    _count(info['finished']),
-                    _score(agg['avg']),
-                    _score(agg['std'] * to_ci),
-                    _score(agg['min']),
-                    _score(agg['max']),
-                    f'{probs[idx - 1]:.0%}',
-                    _weight(strat.weight),
-                 ],
-                 attr)
-            )
-
-        rows = sorted(rows, key=lambda x: x[0])
-        for row in rows:
-            table.add_row(row[1], attr=row[2])
-
-        # import sys
-        # sys.stderr.write('\033c\033[3J')
-        # sys.stderr.flush()
-        for table_row in table.format().split('\n'):
-            logger.info(table_row)
 
     def available_slots(self):
         return max(0, self.max_slots - self.slots_running)
@@ -323,10 +226,10 @@ class Scheduler:
         available_slots = self.available_slots()
         if not available_slots:
             return []
-        logger.debug(ColorFormat('We have %d slots to use').light_gray,
+        logger.debug(CF('We have %d slots to use').light_gray,
                      available_slots)
         # Get best scores plus eps (to avoid division by zero)
-        probs = self._probs()
+        probs = self.probabilities()
         # Sample from discrete probability function.
         selected = choice(len(self.strategies), size=available_slots, p=probs)
         selected = bincount(selected)
@@ -378,7 +281,7 @@ class Scheduler:
                 except StopIteration:
                     self.strategies[strat]['exhausted'] = True
                     logger.info(
-                        ColorFormat('%s is exhausted').bold.bottle_green,
+                        CF('%s is exhausted').bold.bottle_green,
                         strat.name)
                     break
                 except Exception as err:
@@ -388,7 +291,7 @@ class Scheduler:
                         '{}: {}'.format(type(err).__name__, err))
             if created:
                 logger.info(
-                    ColorFormat('New %d × %s cv=%d fit=%d').dark_gray,
+                    CF('New %d × %s cv=%d fit=%d').dark_gray,
                     created,
                     strat.name,
                     config['njobs_on_estimator'],
@@ -400,25 +303,20 @@ class Scheduler:
         if self._cooperate:
             self._cooperate = False
             logger.info(
-                ColorFormat('Cooperation has been disabled.').cyan.bold)
-            if self.max_slots < self.nconsumers:
-                logger.info(
-                    ColorFormat('Increasing slots from %d to %d.').cyan,
-                    self.max_slots, self.nconsumers)
-                self.nconsumers = self.max_slots
+                CF('Cooperation has been disabled.').cyan.bold)
         else:
             self._cooperate = True
             logger.info(
-                ColorFormat('Cooperation has been enabled.').cyan.bold)
+                CF('Cooperation has been enabled.').cyan.bold)
             logger.info(
-                ColorFormat('The current number of slots is %d.').cyan,
+                CF('The current number of slots is %d.').cyan,
                 self.max_slots)
             logger.info(
-                ColorFormat('Collecting information for analysis.').cyan)
+                CF('Collecting information for analysis.').cyan)
             self.last_coop_time = time.time()
             self._init_proc()
 
-    def _probs(self):
+    def probabilities(self):
         weights = list()
         min_score = min(max(0, info['best']['agg']['avg'] * strat.weight)
                         for strat, info in self.strategies.items()
@@ -442,42 +340,43 @@ class Scheduler:
         probs = weights / sum(weights)
         return probs
 
-    def _averate_worker_cpu_usage(self):
+    def _average_worker_cpu_usage(self):
         logger = logging.getLogger('war.scheduler')
         perc_expected = self.slots_running / self.cpu_count
         ratios = list()
         for child in self.proc_children:
             perc_usage = child.cpu_percent() / 100
             ratio = perc_usage / (perc_expected + 1e-6)
-            logger.debug(ColorFormat('CPU Usage: %.2f').light_gray,
-                ratio)
+            logger.debug(CF('CPU Usage: %5.1f%%').light_gray,
+                100 * ratio)
             if ratio > 0:
                 ratios.append(ratio)
         if not ratios:
             return (0, 0)
-        return (len(ratios), numpy.mean(ratios))
+        active = max(self.slots_running, len(ratios))
+        return (len(ratios), numpy.sum(ratios) / (active + 1e-6))
 
     def report_worker_usage(self):
         logger = logging.getLogger('war.scheduler')
-        nactive, ratio = self._averate_worker_cpu_usage()
+        nactive, ratio = self._average_worker_cpu_usage()
         logger.info(
-            ColorFormat('%d active workers, average CPU usage: %.0f%%').cyan,
-            nactive, ratio * 100)
+            CF('%d active workers, %d slots, average CPU usage: %.0f%%').cyan,
+            nactive, self.slots_running, ratio * 100)
 
     def cooperate(self, force=False):
         if not force and (time.time() - self.last_coop_time) < 60:
             return
         self.last_coop_time = time.time()
         logger = logging.getLogger('war.scheduler')
-        nactive, ratio = self._averate_worker_cpu_usage()
+        nactive, ratio = self._average_worker_cpu_usage()
         logger.info(
-            ColorFormat('%d active workers, average CPU usage: %.0f%%').cyan,
-            nactive, ratio * 100)
+            CF('%d active workers, %d slots, average CPU usage: %.0f%%').cyan,
+            nactive, self.slots_running, ratio * 100)
         if ratio == 0:
             return
         if self.slots_running > self.max_slots:
             logger.info(
-                ColorFormat(
+                CF(
                     ('There are %d slots running above current limit %d. '
                      'Waiting them to finish.')).cyan,
                 self.slots_running - self.max_slots, self.max_slots)

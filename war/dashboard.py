@@ -4,9 +4,12 @@ from collections import OrderedDict
 import logging
 import sys
 
+import numpy
+
 from war.cformat import ColorFormat as CF
 from war.input import getch, input_int, input_float
 from war.table import Table, Cell, NO_BOX_DRAWING
+from war.status import StatusTable
 
 
 class Dashboard:
@@ -17,11 +20,13 @@ class Dashboard:
         self.engine = engine
         self.scheduler = scheduler
         self.handlers = OrderedDict(
-            s=(self.status, 'Show the engine status.'),
+            s=(self.status, 'Show the status table.'),
+            S=(self.sort_status, 'Set sorting column of the status table.'),
+            T=(self.status_theme, 'Set status table theme.'),
             e=(self.show_error, 'Show last task error information.'),
-            t=(self.toggle_cooperate, 'Toggle cooperation mode.'),
+            C=(self.toggle_cooperate, 'Toggle cooperation mode.'),
             c=(self.cooperate, 'Force execution of cooperation procedure.'),
-            l=(self.toggle_log_level, 'Toggle logging level.'),
+            L=(self.toggle_log_level, 'Toggle logging level.'),
             p=(self.show_strategy, 'Show strategy information.'),
             w=(self.set_weight, 'Set weight of a strategy.'),
             m=(self.set_max_slots, 'Set maximum slots.'),
@@ -30,6 +35,7 @@ class Dashboard:
             q=(self.quit, 'Quit.'),
         )
         self.handlers['\x03'] = (self.quit, None)
+        self._status = StatusTable(engine, scheduler)
 
     def update(self):
         char = getch()
@@ -50,8 +56,13 @@ class Dashboard:
         self.scheduler.cooperate(force=True)
 
     def status(self):
-        self.scheduler.report_results()
-        # sched.report_counters()
+        self._status.report()
+
+    def sort_status(self):
+        self._status.set_sort_status()
+
+    def status_theme(self):
+        self._status.set_status_theme()
 
     def toggle_log_level(self):
         # Toggle global logging between info and debug.
