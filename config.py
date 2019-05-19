@@ -7,8 +7,8 @@ import war
 
 coloredlogs.install(
     level=logging.DEBUG,
-    fmt='%(asctime)s %(levelname)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    fmt='%(asctime)s %(message)s',
+    datefmt='%H:%M:%S'
 )
 logging.getLogger().setLevel(logging.INFO)
 

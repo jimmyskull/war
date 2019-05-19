@@ -16,9 +16,9 @@ class StatusTable:
         self.logger = logging.getLogger('war.status')
         self.engine = engine
         self.scheduler = scheduler
-        self.sort_column = 6
+        self.sort_column = 7
         self.sort_order = 'descending'
-        self._header = ['ID', 'Name', 'Total Time', 'T', 'S', 'Ended',
+        self._header = ['ID', 'Name', 'Total Time', 'T', 'S', 'TSLI', 'Ended',
                         'Best', '95% CI', 'Min', 'Max', 'Prob', 'Weight']
 
     def _get_header(self):
@@ -42,9 +42,10 @@ class StatusTable:
             to_ci = 2.0 / (numpy.sqrt(len(info['best']['scores'])) + 1e-4)
             rows.append([
                 idx, strat.name, info['cumulative_time'], info['running'],
-                info['slots'], info['finished'], agg['avg'],
+                info['slots'], info['tasks_since_last_improvement'],
+                info['finished'], agg['avg'],
                 agg['std'] * to_ci, agg['min'], agg['max'],
-                probs[idx - 1], strat.weight,
+                probs[idx - 1], strat.weight
             ])
         rows = sorted(rows, key=lambda cols: cols[self.sort_column],
                       reverse=self.sort_order == 'descending')
@@ -63,15 +64,16 @@ class StatusTable:
                 Cell(('{} ({:5.1%})'.format(sec2time(row[2], 0),
                                             row[2] / total_time)),
                      attr=['rjust']),
-                format_count(row[3]),
-                format_count(row[4]),
-                format_count(row[5]),
-                format_score(row[6]),
-                format_score(row[7]),
-                format_score(row[8]),
-                format_score(row[9]),
-                format_probability(row[10]),
-                format_weight(row[11]),
+                format_count(row[3]),   # Tasks Running
+                format_count(row[4]),   # Allocated Slots
+                format_count(row[5]),   # Tasks since last improvement
+                format_count(row[6]),   # Ended tasks
+                format_score(row[7]),   # Best Average
+                format_score(row[8]),   # Best 95% CI
+                format_score(row[9]),   # Best Min
+                format_score(row[10]),  # Best Max
+                format_probability(row[11]),
+                format_weight(row[12]),
             ]
             attr = ['bold', 'blue'] if row[6] == best_score else None
             table.add_row(formatted_row, attr)

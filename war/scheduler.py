@@ -44,6 +44,10 @@ class Scheduler:
             self.strategies[strat] = {
                 'cumulative_time': strat.cache['cumulative_time'],
                 'best': strat.cache['best'],
+                'tasks_since_last_improvement':
+                    strat.cache['tasks_since_last_improvement'],
+                'time_since_last_improvement':
+                    strat.cache['time_since_last_improvement'],
                 'finished': strat.cache['finished'],
                 'running': 0,
                 'slots': 0,
@@ -88,6 +92,8 @@ class Scheduler:
             info['running'] -= 1
             info['slots'] -= result.jobs
             info['cumulative_time'] += result.elapsed_time
+            info['tasks_since_last_improvement'] += 1
+            info['time_since_last_improvement'] += result.elapsed_time
             info['finished'] += 1
             if result.status == 'FAILED':
                 self.logger.error('%s task failed: %s', strat.name,
@@ -108,6 +114,8 @@ class Scheduler:
                     'agg': result.agg,
                     'scores': result.scores,
                 }
+                self.strategies[strat]['tasks_since_last_improvement'] = 0
+                self.strategies[strat]['time_since_last_improvement'] = 0
                 self.improved_since_last_report = True
             assert self.strategies[strat]['running'] >= 0
             return

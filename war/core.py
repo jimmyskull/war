@@ -1,5 +1,8 @@
 """Core classes."""
+from datetime import datetime
 import logging
+
+import numpy
 
 from war.cformat import ColorFormat
 from war.database import Database
@@ -32,7 +35,13 @@ class Strategy:
         # Cache only update in load_cache().
         self.cache = {
             'cumulative_time': 0,
-            'best': dict(agg=dict(avg=0, std=0, min=0, max=0), scores=list()),
+            'best': dict(agg=dict(avg=0, std=0, min=0, max=0),
+                         scores=list(),
+                         params=dict()),
+            'tasks_since_last_improvement': 0,
+            # This is the sum of elapsed time, _not_ the difference
+            # of real times between now and the last improvement.
+            'time_since_last_improvement': 0,
             'finished': 0,
         }
         self.load_cache()
@@ -56,6 +65,7 @@ class Strategy:
         best = dict(agg=dict(avg=0, std=0, min=0, max=0), scores=list())
         cumulative_time = 0
         count = 0
+        history = list()
         for _, result in self.database.iterate():
             if result['type'] != 'result':
                 continue
@@ -63,9 +73,19 @@ class Strategy:
             result = result['data']
             if result['status'] != 'OK':
                 continue
-            if not best or best['agg']['avg'] < result['agg']['avg']:
+            dt = datetime.strptime(result['begin_time'], '%Y-%m-%d %H:%M:%S')
+            score = result['agg']['avg']
+            elapsed = result['elapsed_time']
+            history.append((dt, score, elapsed))
+            if not best or best['agg']['avg'] < score:
                 best = result
-            cumulative_time += result['elapsed_time']
+            cumulative_time += elapsed
+        history = sorted(history, key=lambda x: x[0])
+        last_improvement = numpy.argmax(item[1] for item in history)
+        tsli = max(0, len(history) - last_improvement - 1)
+        timesli = sum(item[2] for item in history)
+        self.cache['tasks_since_last_improvement'] = tsli
+        self.cache['time_since_last_improvement'] = timesli
         logger.info(ColorFormat('%s: loaded %d cached results').yellow,
                     self.name, count)
         self.cache['cumulative_time'] = cumulative_time
