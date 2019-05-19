@@ -73,6 +73,7 @@ class Task(object):
             scores=scores,
             jobs=self.total_jobs
         )
+        self.strategy.collect(result)
         return result
 
     def _scoring_name(self):

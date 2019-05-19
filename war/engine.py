@@ -5,7 +5,7 @@ import time
 
 from sklearn.metrics import get_scorer
 
-from war.cformat import ColorFormat
+from war.cformat import ColorFormat as CF
 from war.dashboard import Dashboard
 from war.scheduler import Scheduler
 from war.worker import Worker
@@ -94,7 +94,7 @@ class Engine:
         sched.report_results()
 
         if self.cooperate:
-            logger.info(ColorFormat('Working in cooperative mode').cyan)
+            logger.info(CF('Working in cooperative mode').cyan)
 
         dashboard = Dashboard(self, sched)
 
@@ -117,6 +117,8 @@ class Engine:
 
             while not results.empty():
                 result = results.get()
+                logger.debug(CF('New result %s').dark_gray,
+                             result.task.full_id())
                 sched.collect(result)
 
             if sched.improved_since_last_report:

@@ -131,7 +131,6 @@ class Scheduler:
             if hash(strat) != result.task.strategy_id:
                 continue
             self.tasks_finished += 1
-            strat.collect(result)
             self.strategies[strat]['running'] -= 1
             self.strategies[strat]['slots'] -= result.jobs
             self.strategies[strat]['cumulative_time'] += result.elapsed_time
