@@ -21,6 +21,25 @@ UNICODE_BOX_DRAWING = {
 }
 
 
+NO_BOX_DRAWING = {
+    # Separator
+    'horz_sep': '',
+    'vert_sep': '',
+    # Up
+    'up_left': '',
+    'up_right': '',
+    'up_div': '',
+    # Down
+    'down_left': '',
+    'down_right': '',
+    'down_div': '',
+    # Middle
+    'middle_left': '',
+    'middle_right': '',
+    'middle_div': '',
+}
+
+
 class Cell:
     """
     Table cell.
@@ -87,7 +106,7 @@ class Cell:
         return self.value
 
 
-class TerminalTable:
+class Table:
     """Print a terminal table."""
 
     def __init__(self, table_symbol=None):
@@ -167,4 +186,6 @@ class TerminalTable:
         for row in self.rows:
             output.append(self._get_row(row))
         output.append(self._get_box('down_left', 'down_div', 'down_right'))
+        # Remove empty lines, in case of no box drawing.
+        output = [line for line in output if line.strip()]
         return '\n'.join(output)

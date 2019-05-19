@@ -13,7 +13,7 @@ from war.cformat import ColorFormat
 
 
 def sec2time(sec, n_msec=3):
-    """Convert seconds to 'D days, HH:MM:SS.FFF'."""
+    """Convert seconds to 'Dd, HH:MM:SS.FFF'."""
     # pylint: disable=C0103
     if hasattr(sec, '__len__'):
         return [sec2time(s) for s in sec]
@@ -232,9 +232,9 @@ class Scheduler:
         logger = logging.getLogger('war.scheduler')
 
 
-        from war.table import TerminalTable
+        from war.table import Table
 
-        table = TerminalTable()
+        table = Table()
         table.set_header([
             'ID', '↓Rank', 'Name', 'Total Time', 'T', 'S', 'Ended',
             'Best', '95% CI', 'Min', 'Max', 'Prob', 'Weight'

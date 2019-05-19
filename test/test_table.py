@@ -1,6 +1,6 @@
 import pytest
 
-from war.table import TerminalTable, Cell
+from war.table import TerminalTable, Cell, NO_BOX_DRAWING
 
 
 def test_empty_table():
@@ -68,6 +68,17 @@ def test_table_rjust():
         '├──────┼─────┼────────┤\n'
         '│    a │ 222 │ 333333 │\n'
         '╰──────┴─────┴────────╯'
+    )
+
+
+def test_table_no_box_drawing():
+    table = TerminalTable(NO_BOX_DRAWING)
+    table.set_header(['aaaa', 'b', 'c'])
+    table.add_row([Cell('a', attr=['rjust']), '222', '333333'])
+    content = table.format()
+    assert content == (
+        ' \033[1maaaa\033[0m  \033[1mb  \033[0m  \033[1mc     \033[0m \n'
+        '    a  222  333333 '
     )
 
 
