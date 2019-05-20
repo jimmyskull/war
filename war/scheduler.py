@@ -1,4 +1,6 @@
 """Task scheduler based on strategy performance."""
+import hashlib
+import json
 import logging
 import multiprocessing
 import time
@@ -9,6 +11,7 @@ import numpy
 import psutil
 
 from war.cformat import ColorFormat as CF
+from war.database import Database
 from war.optimize import optimize_slots_config
 
 
@@ -18,6 +21,7 @@ class Scheduler:
                  cooperate):
         self.logger = logging.getLogger('war.scheduler')
         self.strategies = dict()
+        self.database = Database('scheduler')
         self.nconsumers = nconsumers
         self.max_slots = nconsumers
         self.max_slots_per_evaluation = max_slots_per_evaluation
@@ -32,6 +36,7 @@ class Scheduler:
         self.cpu_count = multiprocessing.cpu_count()
         self.last_coop_time = time.time()
         self.proc_children = list(self.proc.children(recursive=True))
+        self._load_state()
         self._init_proc()
 
     def _init_proc(self):
@@ -48,11 +53,41 @@ class Scheduler:
                     strat.cache['tasks_since_last_improvement'],
                 'time_since_last_improvement':
                     strat.cache['time_since_last_improvement'],
+                'manual_weight': None,
                 'finished': strat.cache['finished'],
                 'running': 0,
                 'slots': 0,
                 'exhausted': False
             }
+
+    def _load_state(self):
+        state = self.database.load(self.id())
+        if not state:
+            return
+        self._cooperate = state['cooperate']
+        for name, strat_info in state['strategies'].items():
+            weight = strat_info['manual_weight']
+            if weight is not None:
+                for strat, info in self.strategies.items():
+                    if strat.__class__.__name__ == name:
+                        strat.weight = weight
+                        info['manual_weight'] = weight
+
+    def _save_state(self):
+        state = {
+            'cooperate': self.cooperation_mode,
+            'strategies': dict(),
+        }
+        for strat, info in self.strategies.items():
+            values = dict()
+            values['manual_weight'] = info['manual_weight']
+            state['strategies'][strat.__class__.__name__] = values
+        self.database.store(self.id(), state)
+
+    def id(self):
+        info = [('scheduler', self.__class__.__name__)]
+        sha1 = hashlib.sha1(json.dumps(info).encode('utf-8'))
+        return sha1.hexdigest()
 
     @property
     def cooperation_mode(self):
@@ -128,6 +163,8 @@ class Scheduler:
         strategy = self.strategy_by_id(idx)
         curr = strategy.weight
         strategy.weight = weight
+        self.strategies[strategy]['manual_weight'] = weight
+        self._save_state()
         self.logger.info('Strategy %s weight changed from %.4f to %.4f.',
                          strategy.name, curr, strategy.weight)
 
@@ -219,11 +256,10 @@ class Scheduler:
             max_tasks = strat.max_tasks
             exhausted, finished = info['exhausted'], info['finished']
             if not (max_tasks == -1 or max_tasks > finished) or exhausted:
-                weights.append(0)
                 continue
             best_avg_score = info['best']['agg']['avg'] * strat.weight
-            best_score = min(1, max(0, best_avg_score))
-            norm_score = (best_score - min_score) / (max_score - min_score)
+            # best_score = min(1, max(0, best_avg_score))
+            norm_score = (best_avg_score - min_score) / (max_score - min_score)
             warm_up = 2 * (strat.warm_up - info['finished'])
             weight = max(0, max(norm_score + 1e-6, warm_up))
             weights.append(weight)
