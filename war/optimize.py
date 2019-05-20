@@ -67,11 +67,11 @@ def optimize_slots_config(available_slots, tasks_bounds,
         return bounds[0] <= x <= bounds[1]
 
     best_p, best = None, 0
-    for task, cv, fit in product(*borders.transpose().tolist()):
-        total = task * cv * fit
+    for task, valid, fit in product(*borders.transpose().tolist()):
+        total = task * valid * fit
         if not in_bounds(task, tasks_bounds):
             continue
-        if not in_bounds(cv, validation_bounds):
+        if not in_bounds(valid, validation_bounds):
             continue
         if not in_bounds(fit, fit_bounds):
             continue
@@ -79,7 +79,7 @@ def optimize_slots_config(available_slots, tasks_bounds,
             continue
         best_p = dict(
             tasks=int(task),
-            njobs_on_validation=int(cv),
+            njobs_on_validation=int(valid),
             njobs_on_estimator=int(fit))
         best = total
 

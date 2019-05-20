@@ -227,10 +227,10 @@ class Scheduler:
                                   strat.name,
                                   '{}: {}'.format(type(err).__name__, err))
         if created:
-            self.logger.info(CF('New %d × %s cv=%d fit=%d').dark_gray,
+            self.logger.info(CF('New %d × %s valid=%d fit=%d').dark_gray,
                              created, strat.name,
-                             config['njobs_on_estimator'],
-                             config['njobs_on_validation'])
+                             config['njobs_on_validation'],
+                             config['njobs_on_estimator'])
         return task_list
 
     def next(self):
@@ -258,7 +258,7 @@ class Scheduler:
         scores = list()
         for strat, info in self.strategies.items():
             if not info['exhausted']:
-                score = info['best']['agg']['avg'] * strat.weight
+                score = (info['best']['agg']['avg'] + 1e-5) * strat.weight
                 scores.append(score)
         return numpy.array(scores)
 
@@ -273,7 +273,7 @@ class Scheduler:
             if not (max_tasks == -1 or max_tasks > finished) or exhausted:
                 weights.append(0)
                 continue
-            best_avg_score = info['best']['agg']['avg'] * strat.weight
+            best_avg_score = (info['best']['agg']['avg'] + 1e-5) * strat.weight
             # best_score = min(1, max(0, best_avg_score))
             norm_score = (best_avg_score - min_score) / (max_score - min_score)
             warm_up = 2 * (strat.warm_up - info['finished'])
@@ -293,7 +293,7 @@ class Scheduler:
             if ratio > 0:
                 ratios.append(ratio)
         if not ratios:
-            return (0, 0)
+            return 0
         active = max(self.slots_running, len(ratios))
         nactive = len(ratios)
         ratio = numpy.sum(ratios) / (active + 1e-6)

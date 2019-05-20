@@ -4,7 +4,7 @@ from war.core import Strategy
 class RandomSearchLogisticRegressionL2(Strategy):
 
     def __init__(self):
-        super().__init__(name='RS LR L2', warm_up=100,
+        super().__init__(name='RS LR L2', warm_up=50,
                          parallel_fit_bounds=(1, 1))
         # pylint: disable=I1101
         import ConfigSpace as CS

@@ -6,11 +6,13 @@ with warnings.catch_warnings(record=True) as w:
     from . import (
         ada,
         gb,
+        gm,
         keras,
         lda,
         lgb,
         linear,
         nb,
+        perceptron,
         qda,
         rf,
         svm,
