@@ -20,9 +20,8 @@ class PCAGaussianMixture(Strategy):
                 lower=1, upper=max_components,
                 default_value=min(2, n_features)),
             CSH.UniformIntegerHyperparameter(
-                'n_components',
-                lower=1, upper=max_components,
-                default_value=min(2, n_features)),
+                'n_components', lower=1, upper=max_components,
+                default_value=1),
             CSH.UniformIntegerHyperparameter(
                 'max_iter', lower=50, upper=1000, default_value=100),
             CSH.UniformFloatHyperparameter(

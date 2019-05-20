@@ -72,7 +72,9 @@ class Scheduler:
                 'finished': strat.cache['finished'],
                 'running': 0,
                 'slots': 0,
-                'exhausted': False
+                'exhausted': False,
+                'name': strat.__class__.__name__,
+                'running_tasks': dict(),
             }
 
     def _load_state(self):
@@ -145,6 +147,7 @@ class Scheduler:
             info['tasks_since_last_improvement'] += 1
             info['time_since_last_improvement'] += result.elapsed_time
             info['finished'] += 1
+            del info['running_tasks'][result.task.id()]
             if result.status == 'FAILED':
                 self.logger.error('%s task failed: %s', strat.name,
                                   result.error_info['message'])
@@ -250,7 +253,11 @@ class Scheduler:
         # Generate tasks
         for slots, strat in zip(selected, self.strategies):
             if slots:
-                task_list += self._make_tasks(slots, strat)
+                tasks = self._make_tasks(slots, strat)
+                task_list += tasks
+                for task in tasks:
+                    info = self.strategies[strat]
+                    info['running_tasks'][task.id()] = task.data()
         return task_list
 
     def _get_scores(self):

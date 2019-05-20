@@ -99,6 +99,14 @@ class Task:
         assert callable(self.scoring)
         return self.scoring._score_func.__name__
 
+    def data(self):
+        data = {
+            'params': self.params,
+            'njobs_valid': self.n_jobs,
+            'njobs_fit': self.total_jobs // self.n_jobs,
+        }
+        return data
+
     def full_id(self):
         """Return the full ID for this task."""
         name = self.strategy.__class__.__name__
