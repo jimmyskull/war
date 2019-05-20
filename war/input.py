@@ -19,9 +19,9 @@ def getch():
     try:
         tty.setraw(sys.stdin.fileno())
         char = None
-        for _ in range(1000):
+        for _ in range(100):
             if select.select([sys.stdin], [], [], 0) != ([sys.stdin], [], []):
-                time.sleep(0.05)
+                time.sleep(0.01)
                 continue
             char = sys.stdin.read(1)
             if char:

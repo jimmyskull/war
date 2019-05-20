@@ -81,6 +81,17 @@ class Engine:
         slots : int
             The number of slots to manage.  This should be up to the
             number of CPU cores.
+        cooperate : bool, default: True
+            Whether the engine should start in cooperative mode or not
+            The cooperative mode use dynamic slots over time.  It
+            minimizes CPU concurrency to maximize paralellism. This is
+            specially useful when working with many users in the same
+            environment.
+            Note: this settings is overridden by the store state in the
+            database. That is, this parameter will have effect only in
+            the first run of a War enviroment.
+            If may reset such values by deleting the files within
+            `.war/scheduler`.
         """
         assert slots > 1, 'at least 2 slots are necessary'
         self.slots = slots

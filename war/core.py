@@ -119,9 +119,11 @@ class Strategy:
             if not best or best['agg']['avg'] < score:
                 best = result
         history = sorted(history, key=lambda x: x[0])
-        last_improvement = numpy.argmax([item[1] for item in history])
-        tsli = max(0, len(history) - last_improvement - 1)
-        timesli = sum(item[2] for item in history)
+        tsli, timesli = 0, 0
+        if history:
+            last_improvement = numpy.argmax([item[1] for item in history])
+            tsli = max(0, len(history) - last_improvement - 1)
+            timesli = sum(item[2] for item in history)
         self.cache['tasks_since_last_improvement'] = tsli
         self.cache['time_since_last_improvement'] = timesli
         self.logger.info(CF('%s: loaded %d cached results').yellow,
