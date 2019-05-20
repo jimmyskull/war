@@ -1,10 +1,12 @@
+"""War engine."""
 import logging
 import multiprocessing
-import psutil
-import time
 
 from sklearn.metrics import get_scorer
+from sklearn.model_selection import cross_val_score
+import psutil
 
+from war import metrics
 from war.cformat import ColorFormat as CF
 from war.dashboard import Dashboard
 from war.scheduler import Scheduler
@@ -12,12 +14,15 @@ from war.worker import Worker
 
 
 class Engine:
+    """Main controller of the War engine."""
 
     def __init__(self):
         self.strategies = list()
         self.features = None
         self.target = None
-        self.cv = 3
+        self.trials = 3
+        self.validator = cross_val_score
+        self.scoring = None
         self.slots = -1
         self.cooperate = True
         self.proc = psutil.Process()
@@ -33,14 +38,51 @@ class Engine:
         self.features = features
         self.target = target
 
-    def set_cv(self, cv, scoring='roc_auc'):
-        """CV configuration."""
-        self.cv = cv
-        self.scoring = get_scorer(scoring)
+    def set_validation(self, trials=3, scoring='roc_auc',
+                       validator=cross_val_score):
+        """
+        Validator configuration.
+
+        Each task is defined by a validator and an estimator.
+        The validator train the estimator `trials` times to get a
+        good estimate of the score.
+
+        Parameters
+        ----------
+        trials : int
+            The number of score result from trials that the validator
+            generates.
+        scoring : str or callable
+            The name or a scoring callable created using
+            `sklearn.metrices.make_scorer`. Currently, it must be
+            a the-greater-the-better scorer.
+        validator : callable
+            A function like `sklearn.model_selection.cross_val_score`.
+        """
+        assert isinstance(trials, int), 'trials must be an int'
+        self.trials = trials
+        if scoring == 'gini':
+            self.scoring = metrics.gini
+        else:
+            self.scoring = get_scorer(scoring)
+        self.validator = validator
 
     def set_slots(self, slots, cooperate=True):
-        """Slots should be up to the number of CPU cores."""
-        assert slots > 1
+        """
+        Set the number of processing slots to manage.
+
+        This sets up the maximum number of active processing slots
+        to use.  The engine may create up to 2*slots threads/processes,
+        but will work hard to keep `slots` of these threads/processes
+        active, running tasks.
+
+        Parameters
+        ----------
+        slots : int
+            The number of slots to manage.  This should be up to the
+            number of CPU cores.
+        """
+        assert slots > 1, 'at least 2 slots are necessary'
         self.slots = slots
         self.cooperate = cooperate
 
@@ -78,8 +120,7 @@ class Engine:
         for worker in consumers:
             worker.start()
 
-        nfolds = self.cv
-        sched = Scheduler(self.strategies, num_consumers, nfolds,
+        sched = Scheduler(self.strategies, num_consumers, self.trials,
                           self.cooperate)
 
         # Some strategy may want to define its search space based on
@@ -90,7 +131,7 @@ class Engine:
             strategy.init(info={
                 'features': self.features,
                 'target': self.target,
-                'cv': self.cv,
+                'trials': self.trials,
             })
 
         if self.cooperate:
@@ -106,8 +147,9 @@ class Engine:
             for task in new_tasks:
                 task.features = self.features
                 task.target = self.target
-                task.cv = nfolds
+                task.trials = self.trials
                 task.scoring = self.scoring
+                task.validator = self.validator
                 tasks.put(task)
             # Update UI
             try:

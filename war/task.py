@@ -1,3 +1,4 @@
+"""Worker task."""
 from collections import OrderedDict
 from datetime import datetime
 import hashlib
@@ -6,28 +7,43 @@ import time
 import traceback
 import warnings
 
-from sklearn.model_selection import cross_val_score
 import numpy
 
 from war.result import Result
 
 
-class Task(object):
+class Task:
+    """
+    A Task is an object that travels between processes, to run inside
+    a worker process.
+
+    Parameters
+    ----------
+    strategy : Strategy
+        The strategy that generated this task.
+    strategy_id : int
+        The hash of this strategy in the main thread.
+    estimator : object
+        An fit/predict_proba estimator pipeline.
+    params : dict-like
+        A dictionary that is stored in the result object.
+    """
 
     def __init__(self, strategy, strategy_id, estimator, params):
         self.strategy = strategy
         self.strategy_id = strategy_id
         self.estimator = estimator
-        self.params = params
-        self.features = None
-        self.target = None
-        self.cv = None
-        self.n_jobs = None
-        self.total_jobs = None
-        self.scoring = 'roc_auc'
-        self.estimator_njobs = None
+        self.params = params    # Parameters used for the estimator
+        self.features = None    # Features dataframe/matrix
+        self.target = None      # Target series/array
+        self.trials = None      # Number of trials in validation
+        self.n_jobs = None      # Validation n_jobs
+        self.total_jobs = None  # Validation n_jobs * fit n_jobs
+        self.validator = None   # Callable for validatios
+        self.scoring = None     # Scorer callable
 
     def __call__(self):
+        # pylint: disable=E1102
         start_time = time.time()
         begin_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         agg = None
@@ -36,24 +52,23 @@ class Task(object):
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings('ignore')
-                cv = cross_val_score(
+                scores = self.validator(
                     estimator=self.estimator,
                     X=self.features,
                     y=self.target,
                     scoring=self.scoring,
-                    cv=self.cv,
+                    cv=self.trials,
                     n_jobs=self.n_jobs
                 )
                 status = 'OK'
-                message = ''
                 agg = dict(
-                    avg=numpy.mean(cv),
-                    std=numpy.std(cv),
-                    min=numpy.min(cv),
-                    max=numpy.max(cv)
+                    avg=numpy.mean(scores),
+                    std=numpy.std(scores),
+                    min=numpy.min(scores),
+                    max=numpy.max(scores)
                 )
-                scores = cv.tolist()
-        except Exception as err:
+                scores = scores.tolist()
+        except Exception as err:  # pylint: disable=W0703
             status = 'FAILED'
             error_info = {
                 'message': '{}: {}'.format(type(err).__name__, err),
@@ -73,6 +88,7 @@ class Task(object):
             scores=scores,
             jobs=self.total_jobs
         )
+        # Save result to the database.
         self.strategy.collect(result)
         return result
 
@@ -84,10 +100,12 @@ class Task(object):
         return self.scoring._score_func.__name__
 
     def full_id(self):
+        """Return the full ID for this task."""
         name = self.strategy.__class__.__name__
         return f'{name}/{self.id()}'
 
     def id(self):
+        """Return SHA-1 hex digest of this task."""
         info = [
             ('strategy', self.strategy.__class__.__name__),
             # ('estimator', self.estimator)),

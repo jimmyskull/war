@@ -16,15 +16,30 @@ from war.optimize import optimize_slots_config
 
 
 class Scheduler:
+    """
+    Task scheduler.
 
-    def __init__(self, strategies, nconsumers, max_slots_per_evaluation,
+    Parameters
+    ----------
+    strategies : list
+        List of strategies
+    nconsumers : int
+        The number of worker processes available.
+    max_slots_validation : int
+        Maximum number of slots that may be allocated for a validation.
+    cooperate : bool
+        Whether scheduler should start in cooperation mode or not.
+        This is overridden by the saved state in the database.
+    """
+
+    def __init__(self, strategies, nconsumers, max_slots_validation,
                  cooperate):
         self.logger = logging.getLogger('war.scheduler')
         self.strategies = dict()
         self.database = Database('scheduler')
         self.nconsumers = nconsumers
         self.max_slots = nconsumers
-        self.max_slots_per_evaluation = max_slots_per_evaluation
+        self.max_slots_validation = max_slots_validation
         self.slots_running = 0
         self._populate(strategies)
         self.tasks_finished = 0
@@ -172,8 +187,8 @@ class Scheduler:
         return max(0, self.max_slots - self.slots_running)
 
     def _get_validation_bounds(self):
-        assert self.max_slots_per_evaluation > 0
-        return (1, self.max_slots_per_evaluation)
+        assert self.max_slots_validation > 0
+        return (1, self.max_slots_validation)
 
     def _make_tasks(self, slots, strat):
         # Get maximum of parallelization on an estimator's fit.
