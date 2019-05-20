@@ -20,7 +20,7 @@ class PCAGaussianMixture(Strategy):
                 lower=1, upper=max_components,
                 default_value=min(2, n_features)),
             CSH.UniformIntegerHyperparameter(
-                'n_components', lower=1, upper=max_components,
+                'n_components', lower=1, upper=min(2, max_components),
                 default_value=1),
             CSH.UniformIntegerHyperparameter(
                 'max_iter', lower=50, upper=1000, default_value=100),
@@ -45,7 +45,7 @@ class PCAGaussianMixture(Strategy):
                 n_components=params['n_components'],
                 reg_covar=params['reg_covar'],
                 max_iter=params['max_iter'],
-                n_init=100,
+                n_init=10,
                 random_state=6,
             ))
         task = self.make_task(model, params)
