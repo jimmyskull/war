@@ -353,8 +353,11 @@ class Scheduler:
         lo_thresh = self.max_slots / (self.max_slots + 1)
         hi_thresh = self.max_slots / max(1, (self.max_slots - 2))
         if ratio < lo_thresh and self.max_slots > max(2, self.nconsumers // 2):
-            ideal = ceil(2 * self.max_slots - self.max_slots / ratio)
-            max_slots = int(max(ideal, 2))
+            # Supposinng that our slots want to use 100%, we compute the
+            # ideal reduction size.  But, sometimes, this reduction is
+            # to harsh, so we limit to smaller step reduction.
+            ideal = round(self.max_slots / ratio -  self.max_slots)
+            max_slots = int(round(self.max_slots - min(ideal, 2)))
             if max_slots != self.max_slots:
                 # It's possible the reduction will not happen when
                 # working if few slots.
