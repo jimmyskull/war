@@ -1,6 +1,8 @@
 """Terminal dashboard control"""
 # pylint: disable=C0111
 from collections import OrderedDict
+import hashlib
+import json
 import logging
 import pprint
 import sys
@@ -11,6 +13,7 @@ from pygments.formatters import TerminalFormatter  # pylint: disable=E0611
 from pygments.lexers import PythonLexer            # pylint: disable=E0611
 
 from war.cformat import ColorFormat as CF
+from war.database import Database
 from war.input import getch, input_int, input_float, input_from_list
 from war.status import StatusTable
 from war.table import (Table, Cell, ASCII_BOX_DRAWING, NO_BOX_DRAWING,
@@ -22,6 +25,7 @@ class Dashboard:
 
     def __init__(self, engine, scheduler):
         self.logger = logging.getLogger('war.dashboard')
+        self.database = Database('dashboard')
         self.table_box = UNICODE_BOX_DRAWING
         self.engine = engine
         self.scheduler = scheduler
@@ -44,6 +48,26 @@ class Dashboard:
         )
         self.handlers['\x03'] = (self.quit, None)
         self._status = StatusTable(engine, scheduler)
+        self._load_state()
+
+    def _load_state(self):
+        state = self.database.load(self.id())
+        if not state:
+            return
+        self.table_box = state['table_box']
+        self._status.state = state['status']
+
+    def _save_state(self):
+        state = {
+            'table_box': self.table_box,
+            'status': self._status.state,
+        }
+        self.database.store(self.id(), state)
+
+    def id(self):
+        info = [('dashboard', self.__class__.__name__)]
+        sha1 = hashlib.sha1(json.dumps(info).encode('utf-8'))
+        return sha1.hexdigest()
 
     def update(self):
         char = getch()
@@ -75,6 +99,7 @@ class Dashboard:
 
     def sort_status(self):
         self._status.set_sort_status()
+        self._save_state()
 
     def toggle_log_level(self):
         # Toggle global logging between info and debug.
@@ -197,7 +222,8 @@ class Dashboard:
             self.logger.info('Theme has not been changed.')
         else:
             name, self.table_box = list(themes.items())[value - 1]
-            self.logger.info(f'Theme has been changed to {name!r}.')
+            self.logger.info('Theme has been changed to %s', name)
+            self._save_state()
 
     def status_help(self):
         self._status.help(self.table_box)

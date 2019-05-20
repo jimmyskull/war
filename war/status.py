@@ -65,6 +65,19 @@ class StatusTable:
         best_score = max(scores)
         return (best_score, total_time, rows)
 
+    @property
+    def state(self):
+        state = {
+            'sort_column': self.sort_column,
+            'sort_order': self.sort_order,
+        }
+        return state
+
+    @state.setter
+    def state(self, state):
+        self.sort_column = state['sort_column']
+        self.sort_order = state['sort_order']
+
     def help(self, table_style):
         """Print legend for the status table."""
         table = Table(table_style)

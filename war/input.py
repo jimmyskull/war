@@ -5,6 +5,7 @@ import select
 import sys
 import termios
 import tty
+import time
 
 
 def getch():
@@ -17,9 +18,11 @@ def getch():
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(sys.stdin.fileno())
+        char = None
         for _ in range(1000):
             if select.select([sys.stdin], [], [], 0) != ([sys.stdin], [], []):
-                return None
+                time.sleep(0.05)
+                continue
             char = sys.stdin.read(1)
             if char:
                 break

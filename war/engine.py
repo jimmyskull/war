@@ -109,12 +109,12 @@ class Engine:
                 task.cv = nfolds
                 task.scoring = self.scoring
                 tasks.put(task)
-
+            # Update UI
             try:
                 dashboard.update()
             except StopIteration:
                 keep_running = False
-
+            # Fetch results
             while not results.empty():
                 result = results.get()
                 logger.debug(CF('New result %s').dark_gray,

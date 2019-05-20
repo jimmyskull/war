@@ -256,14 +256,15 @@ class Scheduler:
             max_tasks = strat.max_tasks
             exhausted, finished = info['exhausted'], info['finished']
             if not (max_tasks == -1 or max_tasks > finished) or exhausted:
+                weights.append(0)
                 continue
             best_avg_score = info['best']['agg']['avg'] * strat.weight
             # best_score = min(1, max(0, best_avg_score))
             norm_score = (best_avg_score - min_score) / (max_score - min_score)
             warm_up = 2 * (strat.warm_up - info['finished'])
-            weight = max(0, max(norm_score + 1e-6, warm_up))
+            weight = max(0, max(norm_score, warm_up))
             weights.append(weight)
-        weights = array(weights) + 1e-6
+        weights = array(weights) + 1e-9
         probs = weights / sum(weights)
         return probs
 
