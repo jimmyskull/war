@@ -1,5 +1,5 @@
 """Core classes."""
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 import numpy
@@ -73,15 +73,16 @@ class Strategy:
             result = result['data']
             if result['status'] != 'OK':
                 continue
-            dt = datetime.strptime(result['begin_time'], '%Y-%m-%d %H:%M:%S')
             score = result['agg']['avg']
             elapsed = result['elapsed_time']
-            history.append((dt, score, elapsed))
+            dat = datetime.strptime(result['begin_time'], '%Y-%m-%d %H:%M:%S')
+            dat += timedelta(seconds=elapsed)
+            history.append((dat, score, elapsed))
+            cumulative_time += elapsed
             if not best or best['agg']['avg'] < score:
                 best = result
-            cumulative_time += elapsed
         history = sorted(history, key=lambda x: x[0])
-        last_improvement = numpy.argmax(item[1] for item in history)
+        last_improvement = numpy.argmax([item[1] for item in history])
         tsli = max(0, len(history) - last_improvement - 1)
         timesli = sum(item[2] for item in history)
         self.cache['tasks_since_last_improvement'] = tsli

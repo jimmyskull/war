@@ -254,7 +254,7 @@ class Scheduler:
         self._average_worker_cpu_usage()
 
     def cooperate(self, force=False):
-        if not force or (time.time() - self.last_coop_time) < 60:
+        if not force and (time.time() - self.last_coop_time) < 60:
             return
         self.last_coop_time = time.time()
         logger = self.logger
@@ -267,7 +267,8 @@ class Scheduler:
                         self.slots_running - self.max_slots, self.max_slots)
             return
         if ratio < 0.95 and self.max_slots > max(2, self.nconsumers // 2):
-            max_slots = int(max(ceil(self.max_slots * ratio), 2))
+            ideal = ceil(2 * self.max_slots - self.max_slots / ratio)
+            max_slots = int(max(ideal, 2))
             if max_slots != self.max_slots:
                 # It's possible the reduction will not happen when
                 # working if few slots.

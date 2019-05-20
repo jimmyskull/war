@@ -38,6 +38,7 @@ class Dashboard:
             m=(self.set_max_slots, 'Set maximum slots.'),
             u=(self.resource_usage, 'Show resource usage.'),
             z=(self.show_counters, 'Show engine internal counters.'),
+            H=(self.status_help, 'Show help for the status table.'),
             h=(self.help, 'Show help information.'),
             q=(self.quit, 'Quit.'),
         )
@@ -154,18 +155,17 @@ class Dashboard:
             self.logger.info(line)
 
     def set_weight(self):
-        bounds = (1, len(self.engine.strategies))
-        msg = 'Select a strategy by ID (1-{}): '.format(bounds[1])
-        st_id = -1
+        strategies = self.engine.strategies
+        names = [strat.name for strat in strategies]
         try:
-            st_id = input_int(msg, bounds=bounds)
-        except ValueError as err:
-            self.logger.error('Could not get strategy: %s', err)
-        if st_id > 0:
-            st_ob = self.scheduler.strategy_by_id(st_id)
+            stid = input_from_list(names, 'Strategies')
+        except ValueError:
+            pass
+        else:
+            st_ob = self.scheduler.strategy_by_id(stid)
             msg = 'Set a weight (current={:.4f}): '.format(st_ob.weight)
             weight = input_float(msg)
-            self.scheduler.set_weight(st_id, weight)
+            self.scheduler.set_weight(stid, weight)
 
     def set_max_slots(self):
         bounds = (2, self.engine.num_consumers)
@@ -198,3 +198,6 @@ class Dashboard:
         else:
             name, self.table_box = list(themes.items())[value - 1]
             self.logger.info(f'Theme has been changed to {name!r}.')
+
+    def status_help(self):
+        self._status.help(self.table_box)
