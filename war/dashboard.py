@@ -160,11 +160,11 @@ class Dashboard:
         table = Table(self.table_box)
         table.set_header(['Counter', 'Current Value'])
         table.add_row(['Scheduler thread CPU usage',
-                       '%.f%%' % sched.proc.cpu_percent()])
+                       '%.1f%%' % sched.proc.cpu_percent()])
         table.add_row(['CPU count', str(sched.cpu_count)])
         table.add_row(['Workers', str(sched.nconsumers)])
         table.add_row(['Maximum slots for validation',
-                       str(sched.max_slots_per_evaluation)])
+                       str(sched.max_slots_validation)])
         table.add_row(['Maximum slots', str(sched.max_slots)])
         table.add_row(['Running slots', str(sched.slots_running)])
         table.add_row(['Tasks ended in this session',

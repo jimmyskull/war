@@ -318,7 +318,9 @@ class Scheduler:
                             'limit %d. Waiting them to finish.')).cyan,
                         self.slots_running - self.max_slots, self.max_slots)
             return
-        if ratio < 0.95 and self.max_slots > max(2, self.nconsumers // 2):
+        lo_thresh = self.max_slots / (self.max_slots + 1)
+        hi_thresh = self.max_slots / (self.max_slots - 1)
+        if ratio < lo_thresh and self.max_slots > max(2, self.nconsumers // 2):
             ideal = ceil(2 * self.max_slots - self.max_slots / ratio)
             max_slots = int(max(ideal, 2))
             if max_slots != self.max_slots:
@@ -328,7 +330,7 @@ class Scheduler:
                                 'decreasing slots from %d to %d.'),
                                ratio * 100, self.max_slots, max_slots)
                 self.max_slots = max_slots
-        elif ratio > 1.10 and self.max_slots < self.nconsumers:
+        elif ratio > hi_thresh and self.max_slots < self.nconsumers:
             max_slots = self.max_slots + 1
             logger.warning(('It seems we can use more CPU. '
                             'Increasing slots from %d to %d.'),
