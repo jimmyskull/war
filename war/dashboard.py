@@ -79,7 +79,8 @@ class Dashboard:
             handler, _ = self.handlers[char]
             handler()
         else:
-            self.logger.warning('Command not recognized: %s', repr(char))
+            msg = 'Command not recognized: %s. Type h for help.'
+            self.logger.warning(msg, repr(char))
 
     def toggle_cooperate(self):
         if self.scheduler.cooperation_mode:

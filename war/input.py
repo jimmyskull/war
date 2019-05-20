@@ -62,6 +62,8 @@ def input_int(message, bounds=None):
                 raise ValueError(
                     'value %d is not in {%d, ..., %d}' % (value, *bounds))
         return value
+    except KeyboardInterrupt:
+        raise ValueError('user cancelled')
     finally:
         logger.setLevel(level)
 
@@ -97,6 +99,8 @@ def input_float(message, bounds=None):
                 raise ValueError(
                     'value %f is not in [%.1f, %.1f]' % (value, *bounds))
         return value
+    except KeyboardInterrupt:
+        raise ValueError('user cancelled')
     finally:
         logger.setLevel(level)
 
@@ -135,5 +139,7 @@ def input_from_list(elements, list_name=''):
             raise ValueError(
                 'value %d is not in {%d, ..., %d}' % (value, 1, max_value))
         return value
+    except KeyboardInterrupt:
+        raise ValueError('user cancelled')
     finally:
         logger.setLevel(level)
