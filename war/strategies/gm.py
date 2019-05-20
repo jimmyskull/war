@@ -19,9 +19,9 @@ class PCAGaussianMixture(Strategy):
                 'pca_n_components',
                 lower=1, upper=max_components,
                 default_value=min(2, n_features)),
-            CSH.UniformIntegerHyperparameter(
-                'n_components', lower=1, upper=min(2, max_components),
-                default_value=1),
+            #CSH.UniformIntegerHyperparameter(
+            #    'n_components', lower=1, upper=min(2, max_components),
+            #    default_value=1),
             CSH.UniformIntegerHyperparameter(
                 'max_iter', lower=50, upper=1000, default_value=100),
             CSH.UniformFloatHyperparameter(
@@ -42,7 +42,7 @@ class PCAGaussianMixture(Strategy):
             StandardScaler(),
             PCA(n_components=params['pca_n_components']),
             GaussianMixture(
-                n_components=params['n_components'],
+                n_components=2, #params['n_components'],
                 reg_covar=params['reg_covar'],
                 max_iter=params['max_iter'],
                 n_init=10,
