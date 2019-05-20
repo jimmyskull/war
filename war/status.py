@@ -25,7 +25,7 @@ class StatusTable:
             'T': 'Tasks that are currently running.',
             'S': 'Total slots allocated for the running tasks.',
             'Ended': 'Total tasks the with recorded results.',
-            'TSLI': 'Tasks since the last best score improvement.',
+            'TLI': 'Tasks since the last best score improvement.',
             'Best': 'The average score for the best candidate.',
             '95% CI': 'The 95% Confidence Interval for the score.',
             'Min': 'The minimum score from the best candidate.',
@@ -119,7 +119,7 @@ class StatusTable:
     def set_sort_status(self):
         sorting_order = ['asceding', 'descending']
         try:
-            value = input_from_list(self._header.keys(), 'Columns to sort')
+            value = input_from_list(self._header.keys(), 'Column to sort')
             order = input_from_list(sorting_order, 'Sorting order')
         except ValueError:
             self.logger.info('Sorting column has not been changed.')
