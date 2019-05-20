@@ -52,8 +52,10 @@ class LazyKerasBuild(BaseEstimator, ClassifierMixin):
         tf.logging.set_verbosity(tf.logging.ERROR)
         config = tf.ConfigProto(
             log_device_placement=False,
-            intra_op_parallelism_threads=n_threads - 1,
-            inter_op_parallelism_threads=1,
+            # Keras is really bad for cooperation.  Its threads won't
+            # use 100%.
+            intra_op_parallelism_threads=1,
+            inter_op_parallelism_threads=n_threads,
             allow_soft_placement=True,
             device_count={'CPU': n_threads}
         )

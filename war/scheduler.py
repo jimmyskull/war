@@ -47,6 +47,7 @@ class Scheduler:
         self.improved_since_last_report = False
         self.last_error = None
         self._cooperate = cooperate
+        self._cooperate_status = 'ready'
         self.proc = psutil.Process()
         self.cpu_count = multiprocessing.cpu_count()
         self.last_coop_time = time.time()
@@ -313,11 +314,35 @@ class Scheduler:
         self._average_worker_cpu_usage()
 
     def cooperate(self, force=False):
-        if not force and (time.time() - self.last_coop_time) < 60:
+        """
+        Execute a cooperation procedure.
+
+        The cooperation procedure executes at every scheduler's next()
+        call, or whenever the user requires. A user request is handled
+        with the force parameter.  Otherwise, the cooperation mode has
+        some resting time in ready-state, and a short time in
+        collect-state.  These states should be changed only inside
+        this method.
+        """
+        if force:
+            # Force to enter immediately in collect-state.
+            self._cooperate_status = 'collect'
+        status = self._cooperate_status
+        # Find waiting time in seconds for the current state.
+        wait_seconds = 120 if status == 'ready' else 10
+        if not force and (time.time() - self.last_coop_time) < wait_seconds:
             return
         self.last_coop_time = time.time()
         logger = self.logger
         ratio = self._average_worker_cpu_usage()
+        if status == 'ready':
+            self._cooperate_status = 'collect'
+            logger.debug(CF('Collecting stats for cooperation.').dark_gray)
+            return
+        if status == 'collect':
+            self._cooperate_status = 'ready'
+        else:
+            raise RuntimeError(f'unexpected cooperation state {status!r}')
         if ratio == 0:
             return
         if self.slots_running > self.max_slots:
@@ -326,7 +351,7 @@ class Scheduler:
                         self.slots_running - self.max_slots, self.max_slots)
             return
         lo_thresh = self.max_slots / (self.max_slots + 1)
-        hi_thresh = self.max_slots / (self.max_slots - 1)
+        hi_thresh = self.max_slots / max(1, (self.max_slots - 2))
         if ratio < lo_thresh and self.max_slots > max(2, self.nconsumers // 2):
             ideal = ceil(2 * self.max_slots - self.max_slots / ratio)
             max_slots = int(max(ideal, 2))
