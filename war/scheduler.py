@@ -148,7 +148,9 @@ class Scheduler:
             info['tasks_since_last_improvement'] += 1
             info['time_since_last_improvement'] += result.elapsed_time
             info['finished'] += 1
-            del info['running_tasks'][result.task.id()]
+            tid = result.task.id()
+            if tid in info['running_tasks']:
+                del info['running_tasks'][tid]
             if result.status == 'FAILED':
                 self.logger.error('%s task failed: %s', strat.name,
                                   result.error_info['message'])
@@ -164,10 +166,7 @@ class Scheduler:
                     self.strategies[strat]['best']['agg']['avg'],
                     score
                 )
-                self.strategies[strat]['best'] = {
-                    'agg': result.agg,
-                    'scores': result.scores,
-                }
+                self.strategies[strat]['best'] = result.data()
                 self.strategies[strat]['tasks_since_last_improvement'] = 0
                 self.strategies[strat]['time_since_last_improvement'] = 0
                 self.improved_since_last_report = True
