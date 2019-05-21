@@ -47,6 +47,8 @@ class Dashboard:
             q=(self.quit, 'Quit.'),
         )
         self.handlers['\x03'] = (self.quit, None)
+        self.handlers['\x0c'] = (self.clear_screen, None)
+        self.handlers['\r'] = (self.print_line, None)
         self._status = StatusTable(engine, scheduler)
         self._load_state()
 
@@ -63,6 +65,7 @@ class Dashboard:
             'status': self._status.state,
         }
         self.database.store(self.id(), state)
+
 
     def id(self):
         info = [('dashboard', self.__class__.__name__)]
@@ -81,6 +84,13 @@ class Dashboard:
         else:
             msg = 'Command not recognized: %s. Type h for help.'
             self.logger.warning(msg, repr(char))
+
+    def clear_screen(self):
+        sys.stdout.write('\033c')
+        sys.stdout.flush()
+
+    def print_line(self):
+        print()
 
     def toggle_cooperate(self):
         if self.scheduler.cooperation_mode:

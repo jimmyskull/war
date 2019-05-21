@@ -67,7 +67,7 @@ class Engine:
             self.scoring = get_scorer(scoring)
         self.validator = validator
 
-    def set_slots(self, slots, cooperate=True):
+    def set_slots(self, slots, cooperate=False):
         """
         Set the number of processing slots to manage.
 
@@ -81,7 +81,7 @@ class Engine:
         slots : int
             The number of slots to manage.  This should be up to the
             number of CPU cores.
-        cooperate : bool, default: True
+        cooperate : bool, default: False
             Whether the engine should start in cooperative mode or not
             The cooperative mode use dynamic slots over time.  It
             minimizes CPU concurrency to maximize paralellism. This is

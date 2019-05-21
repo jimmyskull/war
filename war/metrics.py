@@ -5,7 +5,7 @@ from sklearn import metrics
 
 def gini_score(expected, predicted):
     """Compute the Gini normalized score."""
-    auc = metrics.roc_auc_score(expected, predicted[:, 1])
+    auc = metrics.roc_auc_score(expected, predicted)
     return (auc - 0.5) * 2
 
 

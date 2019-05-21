@@ -71,7 +71,7 @@ class Task:
         except Exception as err:  # pylint: disable=W0703
             status = 'FAILED'
             error_info = {
-                'message': '{}: {}'.format(type(err).__name__, err),
+                'message': '{}: {}'.format(type(err).__name__, str(err)),
                 'traceback': '\n'.join(traceback.format_tb(err.__traceback__))
             }
 

@@ -210,6 +210,10 @@ class Scheduler:
         created = 0
         task_list = list()
         for _ in range(config['tasks']):
+            if self.strategies[strat]['exhausted']:
+                # Avoid printing several "is exhausted" when the
+                # strategy gets exhausted during this loop.
+                break
             try:
                 task = strat.next(nthreads=config['njobs_on_estimator'])
                 if not task:
@@ -247,6 +251,8 @@ class Scheduler:
                           available_slots)
         # Sample from discrete probability function.
         probs = self.probabilities()
+        if all(probs == 0):
+            return []
         sample = choice(len(self.strategies), size=available_slots, p=probs)
         selected = bincount(sample)
         # Get maximum of parallelization on a (cross-)valitation's fit.
@@ -273,6 +279,8 @@ class Scheduler:
     def probabilities(self):
         weights = list()
         scores = self._get_scores()
+        if len(scores) == 0:
+            return numpy.repeat([0], [len(self.strategies)])
         min_score = max(0, min(scores))
         max_score = min(1, max(scores)) + 1e-6
         for strat, info in self.strategies.items():
@@ -284,7 +292,7 @@ class Scheduler:
             best_avg_score = (info['best']['agg']['avg'] + 1e-5) * strat.weight
             # best_score = min(1, max(0, best_avg_score))
             norm_score = (best_avg_score - min_score) / (max_score - min_score)
-            warm_up = 2 * (strat.warm_up - info['finished'])
+            warm_up = 2 * (strat.warm_up - info['finished'] - info['running'])
             weight = max(0, max(norm_score, warm_up))
             weights.append(weight)
         weights = array(weights) + 1e-9
@@ -327,6 +335,8 @@ class Scheduler:
         if force:
             # Force to enter immediately in collect-state.
             self._cooperate_status = 'collect'
+        elif not self.cooperation_mode:
+            return
         status = self._cooperate_status
         # Find waiting time in seconds for the current state.
         wait_seconds = 120 if status == 'ready' else 10

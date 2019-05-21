@@ -55,7 +55,7 @@ class LazyKerasBuild(BaseEstimator, ClassifierMixin):
             # Keras is really bad for cooperation.  Its threads won't
             # use 100%.
             intra_op_parallelism_threads=1,
-            inter_op_parallelism_threads=n_threads,
+            inter_op_parallelism_threads=1,
             allow_soft_placement=True,
             device_count={'CPU': n_threads}
         )
@@ -80,7 +80,7 @@ class RandomSearchKerasMLP(Strategy):
 
     def __init__(self):
         # Keras requires at least two slots due to the Tensorflow backend.
-        super().__init__(name='RS Keras MLP', parallel_fit_bounds=(2, -1))
+        super().__init__(name='RS Keras MLP', parallel_fit_bounds=(1, 1))
         self._n_features = None
         self._cs = None
 
@@ -93,7 +93,7 @@ class RandomSearchKerasMLP(Strategy):
         max_size = min(10, self._n_features)
         cs.add_hyperparameters([
             CSH.UniformIntegerHyperparameter(
-                'epochs', lower=50, upper=500, default_value=100),
+                'epochs', lower=50, upper=1000, default_value=100),
             CSH.CategoricalHyperparameter(
                 'activation_0', choices=['relu']),
             CSH.UniformFloatHyperparameter(
@@ -111,7 +111,6 @@ class RandomSearchKerasMLP(Strategy):
         self._cs = cs
 
     def next(self, nthreads):
-        assert nthreads >= 2
         params = dict(**self._cs.sample_configuration())
         params['n_features'] = self._n_features
         params['n_threads'] = nthreads
@@ -123,7 +122,7 @@ class RandomSearchKerasPCAMLP(Strategy):
 
     def __init__(self):
         super().__init__(name='RS Keras PCA + MLP',
-                         parallel_fit_bounds=(2, -1))
+                         parallel_fit_bounds=(1, 1))
         self._n_features = None
         self._cs = None
 
@@ -140,7 +139,7 @@ class RandomSearchKerasPCAMLP(Strategy):
                 lower=1, upper=max_components,
                 default_value=min(2, self._n_features)),
             CSH.UniformIntegerHyperparameter(
-                'epochs', lower=50, upper=300, default_value=100),
+                'epochs', lower=50, upper=1000, default_value=100),
             CSH.CategoricalHyperparameter(
                 'activation_0', choices=['relu']),
             CSH.UniformFloatHyperparameter(
@@ -158,7 +157,6 @@ class RandomSearchKerasPCAMLP(Strategy):
         self._cs = cs
 
     def next(self, nthreads):
-        assert nthreads >= 2
         from sklearn.decomposition import PCA
         from sklearn.pipeline import make_pipeline
         from sklearn.preprocessing import Imputer

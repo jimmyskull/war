@@ -5,9 +5,13 @@ with warnings.catch_warnings(record=True) as w:
 
     from . import (
         ada,
+        bagging,
+        catboost,
+        extra,
         gb,
-        gm,
+        gp,
         keras,
+        knn,
         lda,
         lgb,
         linear,
@@ -16,5 +20,6 @@ with warnings.catch_warnings(record=True) as w:
         qda,
         rf,
         svm,
-        xgb
+        tree,
+        xgb,
     )

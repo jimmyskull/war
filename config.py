@@ -14,10 +14,13 @@ logging.getLogger().setLevel(logging.INFO)
 
 STRATEGIES = [
     war.strategies.ada.RandomSearchAdaBoost(),
+    war.strategies.bagging.RandomSearchBaggingTree(),
+    war.strategies.extra.RandomSearchExtraTrees(),
+    war.strategies.catboost.RandomSearchCatBoost(),
     war.strategies.gb.RandomSearchGradientBoosting(),
-    war.strategies.gm.PCAGaussianMixture(),
     war.strategies.keras.RandomSearchKerasMLP(),
     war.strategies.keras.RandomSearchKerasPCAMLP(),
+    war.strategies.knn.GridSearchPCAKNN(),
     war.strategies.lda.LDA(),
     war.strategies.lda.PCALDA(),
     war.strategies.lgb.RandomSearchLGBM(),
@@ -32,5 +35,6 @@ STRATEGIES = [
     war.strategies.svm.RandomSearchPCASVMLinear(),
     war.strategies.svm.RandomSearchPCASVMRBF(),
     war.strategies.svm.RandomSearchPCASVMSigmoid(),
+    war.strategies.tree.DecisionTree(),
     war.strategies.xgb.RandomSearchXGB(),
 ]
