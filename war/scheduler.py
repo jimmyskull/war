@@ -5,7 +5,7 @@ import logging
 import multiprocessing
 import time
 
-from numpy import array, bincount, ceil
+from numpy import array, bincount
 from numpy.random import choice
 import numpy
 import psutil

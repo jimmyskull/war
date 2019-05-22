@@ -41,6 +41,7 @@ class Task:
         self.total_jobs = None  # Validation n_jobs * fit n_jobs
         self.validator = None   # Callable for validatios
         self.scoring = None     # Scorer callable
+        self.creation_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def __call__(self):
         # pylint: disable=E1102
@@ -104,6 +105,7 @@ class Task:
             'params': self.params,
             'njobs_valid': self.n_jobs,
             'njobs_fit': self.total_jobs // self.n_jobs,
+            'creation_date': self.creation_date,
         }
         return data
 

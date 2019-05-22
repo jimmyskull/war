@@ -96,7 +96,8 @@ class Strategy:
 
     def load_cache(self):
         """Load the cached results."""
-        self.logger.debug(CF('%s: loading cache').dark_gray, self.name)
+        logger = logging.getLogger('war.strategy')
+        logger.debug(CF('%s: loading cache').dark_gray, self.name)
         best = dict(agg=dict(avg=0, std=0, min=0, max=0),
                     scores=list(), params=dict())
         cumulative_time = 0
@@ -125,7 +126,6 @@ class Strategy:
             timesli = sum(item[2] for item in history)
         self.cache['tasks_since_last_improvement'] = tsli
         self.cache['time_since_last_improvement'] = timesli
-        logger = logging.getLogger('war.strategy')
         logger.info(CF('%s: loaded %d cached results').yellow,
                     self.name, count)
         self.cache['cumulative_time'] = cumulative_time

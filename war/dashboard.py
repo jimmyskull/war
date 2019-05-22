@@ -159,7 +159,7 @@ class Dashboard:
         except ValueError:
             pass
         else:
-            pp = pprint.PrettyPrinter()
+            pp = pprint.PrettyPrinter(width=120)
             strategy = strategies[stid - 1]
             print(CF(strategy.name).bold)
             code = pp.pformat(self.scheduler.strategies[strategy])
