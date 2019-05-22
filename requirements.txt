@@ -1,5 +1,7 @@
+catboost>=0.14.2
 coloredlogs>=10.0
 ConfigSpace>=0.4.10
+lightgbm>=2.2.3
 numpy>=1.16.3
 pandas>=0.24.2
 scikit-learn>=0.21.1
