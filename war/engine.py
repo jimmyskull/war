@@ -132,7 +132,7 @@ class Engine:
         tasks = multiprocessing.JoinableQueue()
         results = multiprocessing.Queue()
 
-        logger.info('Data: %s', self.data_id)
+        logger.info(CF('Data: %s').light_gray, self.data_id)
 
         # Start consumers
         logger.info('Creating %d consumers', num_consumers)
