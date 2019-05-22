@@ -93,7 +93,7 @@ class Engine:
             If may reset such values by deleting the files within
             `.war/scheduler`.
         """
-        assert slots > 1, 'at least 2 slots are necessary'
+        assert slots > 0, 'at least 1 slots are necessary'
         self.slots = slots
         self.cooperate = cooperate
 
