@@ -9,7 +9,7 @@ and is distributed under the MIT license.
 '''
 
 setup(name='War',
-      version='0.0',
+      version='0.0.10',
       description='Machine Learning Strategy Competition',
       long_description=long_description,
       author='Paulo Roberto Urio',
