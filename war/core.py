@@ -68,9 +68,7 @@ class Strategy:
         # Cache only update in load_cache().
         self.cache = {
             'cumulative_time': 0,
-            'best': dict(agg=dict(avg=0, std=0, min=0, max=0),
-                         scores=list(),
-                         params=dict()),
+            'best': dict(agg=dict(avg=0), params=dict()),
             'tasks_since_last_improvement': 0,
             # This is the sum of elapsed time, _not_ the difference
             # of real times between now and the last improvement.

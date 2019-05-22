@@ -14,7 +14,7 @@ def main():
     engine = war.Engine()
     engine.set_data(X, y)
     engine.set_validation(3, scoring='gini')
-    engine.set_slots(1)
+    engine.set_slots(-1)
     engine.add(config.STRATEGIES)
     engine.start()
 

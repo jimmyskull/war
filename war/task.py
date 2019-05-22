@@ -6,6 +6,7 @@ import json
 import time
 import traceback
 import warnings
+import psutil
 
 import numpy
 
@@ -36,6 +37,7 @@ class Task:
         self.params = params    # Parameters used for the estimator
         self.features = None    # Features dataframe/matrix
         self.target = None      # Target series/array
+        self.data_id = None     # SHA-1 of features + target
         self.trials = None      # Number of trials in validation
         self.n_jobs = None      # Validation n_jobs
         self.total_jobs = None  # Validation n_jobs * fit n_jobs
@@ -47,6 +49,7 @@ class Task:
         # pylint: disable=E1102
         start_time = time.time()
         begin_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        proc = psutil.Process()
         agg = None
         scores = None
         error_info = None
@@ -75,19 +78,27 @@ class Task:
                 'message': '{}: {}'.format(type(err).__name__, str(err)),
                 'traceback': '\n'.join(traceback.format_tb(err.__traceback__))
             }
-
+        cpu_times = proc.cpu_times()
+        times = {
+            'user': cpu_times[0],
+            'system': cpu_times[1],
+            'children_user': cpu_times[2],
+            'children_system': cpu_times[3],
+        }
         elapsed_time = time.time() - start_time
         result = Result(
             task=self,
             begin_time=begin_time,
             elapsed_time=elapsed_time,
             total_time=elapsed_time * self.total_jobs,
+            cpu_times=times,
             status=status,
             error_info=error_info,
             agg=agg,
             scoring=self._scoring_name(),
             scores=scores,
-            jobs=self.total_jobs
+            njobs=dict(valid=self.n_jobs,
+                       fit=self.total_jobs // self.n_jobs)
         )
         # Save result to the database.
         self.strategy.collect(result)
@@ -103,8 +114,8 @@ class Task:
     def data(self):
         data = {
             'params': self.params,
-            'njobs_valid': self.n_jobs,
-            'njobs_fit': self.total_jobs // self.n_jobs,
+            'njobs': dict(valid=self.n_jobs,
+                          fit=self.total_jobs // self.n_jobs),
             'creation_date': self.creation_date,
         }
         return data
@@ -121,7 +132,6 @@ class Task:
             # ('estimator', self.estimator)),
             # FIXME: We cannot use scoring here because it is changed
             # after instantiation by the engine.
-            # ('scoring', self._scoring_name()),
         ]
         if not isinstance(self.params, dict):
             params = OrderedDict(**self.params)

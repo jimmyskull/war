@@ -1,7 +1,9 @@
 """War engine."""
+import hashlib
 import logging
 import multiprocessing
 
+from pandas.util import hash_pandas_object
 from sklearn.metrics import get_scorer
 from sklearn.model_selection import cross_val_score
 import psutil
@@ -20,6 +22,7 @@ class Engine:
         self.strategies = list()
         self.features = None
         self.target = None
+        self.data_id = None
         self.trials = 3
         self.validator = cross_val_score
         self.scoring = None
@@ -37,6 +40,10 @@ class Engine:
         """Classification dataset."""
         self.features = features
         self.target = target
+        digest = hashlib.sha1()
+        digest.update(hash_pandas_object(features, index=True).values)
+        digest.update(hash_pandas_object(target, index=True).values)
+        self.data_id = digest.hexdigest()
 
     def set_validation(self, trials=3, scoring='roc_auc',
                        validator=cross_val_score):
@@ -93,7 +100,7 @@ class Engine:
             If may reset such values by deleting the files within
             `.war/scheduler`.
         """
-        assert slots > 0, 'at least 1 slots are necessary'
+        assert slots != 0, 'at least 1 slots are necessary'
         self.slots = slots
         self.cooperate = cooperate
 
@@ -123,6 +130,8 @@ class Engine:
         # Establish communication queues
         tasks = multiprocessing.JoinableQueue()
         results = multiprocessing.Queue()
+
+        logger.info('Data: %s', self.data_id)
 
         # Start consumers
         logger.info('Creating %d consumers', num_consumers)
@@ -158,6 +167,7 @@ class Engine:
             for task in new_tasks:
                 task.features = self.features
                 task.target = self.target
+                task.data_id = self.data_id
                 task.trials = self.trials
                 task.scoring = self.scoring
                 task.validator = self.validator

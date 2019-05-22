@@ -4,6 +4,7 @@ import json
 import logging
 import multiprocessing
 import time
+import traceback
 
 from numpy import array, bincount
 from numpy.random import choice
@@ -132,10 +133,10 @@ class Scheduler:
         if excess > 0:
             self.logger.info(CF('There are %d slots above the current limit. '
                                 'Waiting for end of normal execution.').yellow,
-                              excess)
+                             excess)
 
     def collect(self, result):
-        self.slots_running -= result.jobs
+        self.slots_running -= result.slots
         assert self.slots_running >= 0
         for strat in self.strategies:
             if hash(strat) != result.task.strategy_id:
@@ -143,7 +144,7 @@ class Scheduler:
             self.tasks_finished += 1
             info = self.strategies[strat]
             info['running'] -= 1
-            info['slots'] -= result.jobs
+            info['slots'] -= result.slots
             info['cumulative_time'] += result.elapsed_time
             info['tasks_since_last_improvement'] += 1
             info['time_since_last_improvement'] += result.elapsed_time
@@ -232,7 +233,9 @@ class Scheduler:
             except Exception as err:  # pylint: disable=W0703
                 self.logger.error('Failed to create a task for %s: %s',
                                   strat.name,
-                                  '{}: {}'.format(type(err).__name__, err))
+                                  '{}: {}'.format(type(err).__name__, str(err)))
+                msg = traceback.format_exc()
+                self.logger.error('%s', msg)
         if created:
             self.logger.info(CF('New %d × %s valid=%d fit=%d').dark_gray,
                              created, strat.name,
