@@ -52,7 +52,6 @@ class Strategy:
     def __init__(self, name=None, parallel_tasks_bounds=(1, -1),
                  parallel_fit_bounds=(1, -1), max_tasks=-1,
                  weight=1.0, warm_up=20):
-        self.logger = logging.getLogger('war.strategy')
         self.name = name if name else self.__class__.__name__
         self.parallel_tasks_bounds = parallel_tasks_bounds
         self.parallel_fit_bounds = parallel_fit_bounds
@@ -126,8 +125,9 @@ class Strategy:
             timesli = sum(item[2] for item in history)
         self.cache['tasks_since_last_improvement'] = tsli
         self.cache['time_since_last_improvement'] = timesli
-        self.logger.info(CF('%s: loaded %d cached results').yellow,
-                         self.name, count)
+        logger = logging.getLogger('war.strategy')
+        logger.info(CF('%s: loaded %d cached results').yellow,
+                    self.name, count)
         self.cache['cumulative_time'] = cumulative_time
         self.cache['best'] = best
         self.cache['finished'] += count
@@ -158,7 +158,8 @@ class Strategy:
         )
         if self.database.find(task.id()):
             return None
-        self.logger.debug(CF('New task %s').dark_gray, task.full_id())
+        logger = logging.getLogger('war.strategy')
+        logger.debug(CF('New task %s').dark_gray, task.full_id())
         return task
 
     def collect(self, result):

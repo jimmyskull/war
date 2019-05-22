@@ -22,7 +22,6 @@ class Database:
     """
 
     def __init__(self, namespace='default'):
-        self.logger = logging.getLogger('war.database')
         self.namespace = namespace
         self.db_path = os.path.join(DEFAULT_CHEF_DIR_ENVIRONMENT, namespace)
         self._init()
@@ -30,8 +29,9 @@ class Database:
     def _init(self):
         if not os.path.exists(self.db_path):
             os.makedirs(self.db_path)
-            self.logger.debug(CF('Initialized empty database %s').dark_gray,
-                              self.db_path)
+            logger = logging.getLogger('war.database')
+            logger.debug(CF('Initialized empty database %s').dark_gray,
+                         self.db_path)
 
     def _object_path(self, oid):
         # Return .war/namespace/00/00000..
@@ -47,17 +47,17 @@ class Database:
         logger = logging.getLogger('war.database')
         tmp = NamedTemporaryFile(dir=dirname, prefix='obj_', delete=False)
         try:
-            self.logger.debug(CF('Writing compressed object in %s').dark_gray,
-                              tmp.name)
+            logger.debug(CF('Writing compressed object in %s').dark_gray,
+                         tmp.name)
             compressed = zlib.compress(content, level=9)
             tmp.write(compressed)
             tmp.close()
-            self.logger.debug(
+            logger.debug(
                 CF('Compression: %d of %d (%.2f%% of original size)').dark_gray,
                 len(compressed), len(content),
                 100 * len(compressed) / len(content))
-            self.logger.debug(CF('Renaming compressed object to %s').dark_gray,
-                              object_path)
+            logger.debug(CF('Renaming compressed object to %s').dark_gray,
+                         object_path)
             os.rename(tmp.name, object_path)
         finally:
             if os.path.exists(tmp.name):
@@ -103,7 +103,8 @@ class Database:
         if not self.find(oid):
             return None
         object_path = self._object_path(oid)
-        self.logger.debug(CF('Loading object %s').dark_gray, object_path)
+        logger = logging.getLogger('war.database')
+        logger.debug(CF('Loading object %s').dark_gray, object_path)
         with open(object_path, 'rb') as file:
             decompressed = zlib.decompress(file.read())
             obj = pickle.loads(decompressed)
@@ -120,6 +121,6 @@ class Database:
         obj : object
             The object that will be pickled into the database.
         """
-        self.logger.debug(CF('Storing object %s/%s').dark_gray,
-                          self.namespace, oid)
+        logger = logging.getLogger('war.database')
+        logger.debug(CF('Storing object %s/%s').dark_gray, self.namespace, oid)
         self._write_object(oid, pickle.dumps(obj))
