@@ -65,6 +65,13 @@ class Strategy:
         # Use class name as userspace, to avoid spaces and special
         # characters in the path.
         self.database = Database(namespace=self.__class__.__name__)
+        # Parameters for the tasks
+        self.features = None
+        self.target = None
+        self.trials = None
+        self.data_id = None
+        self.scoring = None
+        self.validator = None
         # Cache only update in load_cache().
         self.cache = {
             'cumulative_time': 0,
@@ -109,7 +116,7 @@ class Strategy:
             if result['status'] != 'OK':
                 continue
             score = result['agg']['avg']
-            elapsed = result['elapsed_time']
+            elapsed = result['real_times']['elapsed']
             dat = datetime.strptime(result['begin_time'], '%Y-%m-%d %H:%M:%S')
             dat += timedelta(seconds=elapsed)
             history.append((dat, score, elapsed))
@@ -154,6 +161,12 @@ class Strategy:
             estimator=estimator,
             params=params
         )
+        task.features = self.features
+        task.target = self.target
+        task.data_id = self.data_id
+        task.trials = self.trials
+        task.scoring = self.scoring
+        task.validator = self.validator
         if self.database.find(task.id()):
             return None
         logger = logging.getLogger('war.strategy')

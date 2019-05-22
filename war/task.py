@@ -89,13 +89,12 @@ class Task:
         result = Result(
             task=self,
             begin_time=begin_time,
-            elapsed_time=elapsed_time,
-            total_time=elapsed_time * self.total_jobs,
+            real_times=dict(elapsed=elapsed_time,
+                            total=elapsed_time * self.total_jobs),
             cpu_times=times,
             status=status,
             error_info=error_info,
             agg=agg,
-            scoring=self._scoring_name(),
             scores=scores,
             njobs=dict(valid=self.n_jobs,
                        fit=self.total_jobs // self.n_jobs)
@@ -104,12 +103,17 @@ class Task:
         self.strategy.collect(result)
         return result
 
-    def _scoring_name(self):
-        # pylint: disable=E1101
+    def scoring_name(self):
+        # pylint: disable=E1101,W0212
         if isinstance(self.scoring, str):
             return self.scoring
         assert callable(self.scoring)
         return self.scoring._score_func.__name__
+
+    def validator_name(self):
+        # pylint: disable=E1101
+        assert callable(self.validator)
+        return self.validator.__name__
 
     def data(self):
         data = {
@@ -129,9 +133,10 @@ class Task:
         """Return SHA-1 hex digest of this task."""
         info = [
             ('strategy', self.strategy.__class__.__name__),
-            # ('estimator', self.estimator)),
-            # FIXME: We cannot use scoring here because it is changed
-            # after instantiation by the engine.
+            ('data', self.data_id),
+            ('trials', self.trials),
+            ('validator', self.validator_name()),
+            ('scoring', self.scoring_name()),
         ]
         if not isinstance(self.params, dict):
             params = OrderedDict(**self.params)

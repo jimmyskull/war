@@ -98,7 +98,7 @@ def make_plot():
         if best_strat_stid == stid:
             dot_alpha, fill_alpha = 1, 0.1
         else:
-            dot_alpha, fill_alpha = 0.1, 0.01
+            dot_alpha, fill_alpha = 0.4, 0.01
         ax.plot(date, avg, lw=2, label=strat.name, color=color,
                 alpha=dot_alpha)
         ax.scatter(date, avg, s=7, color=color, alpha=dot_alpha)
@@ -109,8 +109,8 @@ def make_plot():
     plt.title('War database history')
     ax.set_ylabel('Gini')
     ax.set_xlabel('Minutes since first task')
-    if min_score is not None:
-        ax.set_ylim(max(0, min_score), min(1, max_score))
+    #if min_score is not None:
+    #    ax.set_ylim(max(0, min_score), min(1, max_score))
     return (fig, legend)
 
 

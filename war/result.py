@@ -10,18 +10,16 @@ class Result:
     instead of a result to consume fewer bytes in the database file.
     """
 
-    def __init__(self, task, begin_time, elapsed_time, total_time, cpu_times,
-                 status, error_info, agg, scores, scoring, njobs):
+    def __init__(self, task, begin_time, real_times, cpu_times,
+                 status, error_info, agg, scores, njobs):
         self.task = task
         self.begin_time = begin_time
-        self.elapsed_time = elapsed_time
-        self.total_time = total_time
+        self.real_times = real_times
         self.cpu_times = cpu_times
         self.status = status
         self.error_info = error_info
         self.agg = agg
         self.scores = scores
-        self.scoring = scoring
         self.njobs = njobs
         self.slots = njobs['valid'] * njobs['fit']
 
@@ -49,13 +47,13 @@ class Result:
         data = {
             'status': self.status,
             'begin_time': self.begin_time,
-            'elapsed_time': self.elapsed_time,
-            'total_time': self.total_time,
+            'real_times': self.real_times,
             'cpu_times': self.cpu_times,
             'error_info': self.error_info,
             'agg': self.agg,
             'scores': self.scores,
-            'scoring': self.scoring,
+            'scoring': self.task.scoring_name(),
+            'validator': self.task.validator_name(),
             'params': dict(**self.task.params),
             'data': self.task.data_id,
             'njobs': self.njobs,

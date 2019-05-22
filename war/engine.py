@@ -44,6 +44,7 @@ class Engine:
         digest.update(hash_pandas_object(features, index=True).values)
         digest.update(hash_pandas_object(target, index=True).values)
         self.data_id = digest.hexdigest()
+        return self.data_id
 
     def set_validation(self, trials=3, scoring='roc_auc',
                        validator=cross_val_score):
@@ -140,6 +141,14 @@ class Engine:
         for worker in consumers:
             worker.start()
 
+        for strategy in self.strategies:
+            strategy.features = self.features
+            strategy.target = self.target
+            strategy.trials = self.trials
+            strategy.validator = self.validator
+            strategy.data_id = self.data_id
+            strategy.scoring = self.scoring
+
         sched = Scheduler(self.strategies, num_consumers, self.trials,
                           self.cooperate)
 
@@ -165,12 +174,6 @@ class Engine:
             new_tasks = sched.next()
             # Add tasks to the queue
             for task in new_tasks:
-                task.features = self.features
-                task.target = self.target
-                task.data_id = self.data_id
-                task.trials = self.trials
-                task.scoring = self.scoring
-                task.validator = self.validator
                 tasks.put(task)
             # Update UI
             try:

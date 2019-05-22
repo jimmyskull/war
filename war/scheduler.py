@@ -145,9 +145,9 @@ class Scheduler:
             info = self.strategies[strat]
             info['running'] -= 1
             info['slots'] -= result.slots
-            info['cumulative_time'] += result.elapsed_time
+            info['cumulative_time'] += result.real_times['total']
             info['tasks_since_last_improvement'] += 1
-            info['time_since_last_improvement'] += result.elapsed_time
+            info['time_since_last_improvement'] += result.real_times['total']
             info['finished'] += 1
             tid = result.task.id()
             if tid in info['running_tasks']:
